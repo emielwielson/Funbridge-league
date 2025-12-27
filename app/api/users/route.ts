@@ -82,11 +82,17 @@ export async function GET(request: NextRequest) {
         .eq('league_id', currentLeague.id) as any;
 
       // Map assignments to users
-      const usersWithDivisions: UserWithDivision[] = users.map((user) => {
-        const assignment = assignments?.find((a) => a.player_id === user.id);
+      const typedUsers = users as any[];
+      const usersWithDivisions: UserWithDivision[] = typedUsers.map((user: any) => {
+        const assignment = assignments?.find((a: any) => a.player_id === user.id);
         return {
-          ...user,
-          division_id: assignment?.division_id,
+          id: user.id,
+          name: user.name,
+          role: user.role,
+          handicap: user.handicap,
+          email: user.email,
+          funbridge_username: user.funbridge_username,
+          division_id: (assignment as { division_id: string } | null)?.division_id,
           division_name: assignment?.divisions
             ? (assignment.divisions as any).name
             : undefined,
@@ -98,8 +104,16 @@ export async function GET(request: NextRequest) {
     }
 
     // No current league, return users without division info
+    const typedUsersForResponse = users as any[];
     return NextResponse.json({
-      data: users.map((user) => ({ ...user })),
+      data: typedUsersForResponse.map((user: any) => ({
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        handicap: user.handicap,
+        email: user.email,
+        funbridge_username: user.funbridge_username,
+      })),
       error: null,
     });
   } catch (error: any) {

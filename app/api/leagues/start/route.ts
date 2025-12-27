@@ -86,8 +86,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Update league status to active
-    const { data: updatedLeague, error: updateError } = await supabase
-      .from('leagues')
+    const { data: updatedLeague, error: updateError } = await (supabase
+      .from('leagues') as any)
       .update({ status: 'active', updated_at: new Date().toISOString() } as any)
       .eq('id', leagueId)
       .select()
@@ -113,7 +113,8 @@ export async function POST(request: NextRequest) {
         console.error('Error fetching player divisions for match generation:', playerDivisionsError);
       } else if (playerDivisions && playerDivisions.length > 0) {
         // Get unique division IDs
-        const uniqueDivisionIds = [...new Set(playerDivisions.map((pd) => pd.division_id))];
+        const typedPlayerDivisions = playerDivisions as Array<{ division_id: string }>;
+        const uniqueDivisionIds = [...new Set(typedPlayerDivisions.map((pd) => pd.division_id))];
 
         let totalMatchesGenerated = 0;
 
@@ -131,7 +132,8 @@ export async function POST(request: NextRequest) {
             continue;
           }
 
-          const playerIds = players.map((p) => p.player_id);
+          const typedPlayers = players as Array<{ player_id: string }>;
+          const playerIds = typedPlayers.map((p) => p.player_id);
           const matchPairs = generateRoundRobinMatches(playerIds);
 
           if (matchPairs.length === 0) {

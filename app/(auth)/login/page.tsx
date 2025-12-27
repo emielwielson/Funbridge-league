@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import AuthForm from '@/components/auth/AuthForm';
 import { useAuth } from '@/lib/hooks/useAuth';
-import type { LoginData } from '@/lib/utils/validation';
+import type { LoginData, RegistrationData } from '@/lib/utils/validation';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,15 +14,22 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (data: LoginData) => {
+  const handleSubmit = async (data: LoginData | RegistrationData) => {
+    // Type guard to ensure we have LoginData
+    if ('funbridge_username' in data || 'confirmPassword' in data) {
+      setError('Invalid login data');
+      return;
+    }
+
+    const loginData = data as LoginData;
     setLoading(true);
     setError(null);
 
     try {
       // Convert LoginData (name) to LoginParams (name)
       const response = await login({
-        name: data.name,
-        password: data.password,
+        name: loginData.name,
+        password: loginData.password,
       });
 
       if (response.error) {

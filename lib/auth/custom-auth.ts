@@ -113,15 +113,15 @@ export async function registerCustom({
     const passwordHash = await hashPassword(password);
 
     // Insert new user
-    const { data: newUser, error: insertError } = await supabase
-      .from('users')
+    const { data: newUser, error: insertError } = await (supabase
+      .from('users') as any)
       .insert({
         name: name,
         password_hash: passwordHash,
         funbridge_username: funbridge_username,
         role: 'player',
         handicap: 0,
-      })
+      } as any)
       .select()
       .single();
 
@@ -169,7 +169,7 @@ export async function loginCustom({
       .from('users')
       .select('*')
       .eq('name', name)
-      .single();
+      .single<{ id: string; name: string; role: 'player' | 'admin'; password_hash: string; funbridge_username: string | null; handicap: number | null }>();
 
     if (findError || !user) {
       return {
@@ -195,9 +195,9 @@ export async function loginCustom({
       user: {
         id: user.id,
         name: user.name,
-        funbridge_username: user.funbridge_username,
-        role: user.role,
-        handicap: user.handicap,
+        funbridge_username: user.funbridge_username ?? undefined,
+        role: user.role as 'player' | 'admin',
+        handicap: user.handicap ?? 0,
       },
       error: null,
       token,
@@ -228,7 +228,7 @@ export async function getCurrentUserFromToken(
       .from('users')
       .select('*')
       .eq('id', decoded.userId)
-      .single();
+      .single<{ id: string; name: string; role: 'player' | 'admin'; funbridge_username: string | null; handicap: number | null }>();
 
     if (findError || !user) {
       return { user: null, error: { message: 'User not found' } };
@@ -238,9 +238,9 @@ export async function getCurrentUserFromToken(
       user: {
         id: user.id,
         name: user.name,
-        funbridge_username: user.funbridge_username,
-        role: user.role,
-        handicap: user.handicap,
+        funbridge_username: user.funbridge_username ?? undefined,
+        role: user.role as 'player' | 'admin',
+        handicap: (user.handicap ?? 0) as number,
       },
       error: null,
     };

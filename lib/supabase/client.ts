@@ -13,6 +13,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Create Supabase client for client-side usage
 // This uses the anon key and respects RLS policies
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
+}
+
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
@@ -33,6 +37,10 @@ export function createServerClient() {
     throw new Error(
       'Missing SUPABASE_SERVICE_ROLE_KEY. This is required for server-side operations.'
     );
+  }
+
+  if (!supabaseUrl) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
   }
 
   return createClient<Database>(supabaseUrl, serviceRoleKey, {

@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseClient();
 
     // Update user role
-    const { data: updatedUser, error: updateError } = await supabase
-      .from('users')
+    const { data: updatedUser, error: updateError } = await (supabase
+      .from('users') as any)
       .update({ role: 'admin', updated_at: new Date().toISOString() } as any)
       .eq('id', userId)
       .select()

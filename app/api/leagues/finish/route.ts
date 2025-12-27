@@ -71,8 +71,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Update league status to archived
-    const { data: updatedLeague, error: updateError } = await supabase
-      .from('leagues')
+    const { data: updatedLeague, error: updateError } = await (supabase
+      .from('leagues') as any)
       .update({
         status: 'archived',
         finished_at: new Date().toISOString(),

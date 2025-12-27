@@ -97,12 +97,12 @@ export async function POST(request: NextRequest) {
       .from('match_results')
       .select('id')
       .eq('match_id', matchId)
-      .maybeSingle();
+      .maybeSingle<{ id: string }>();
 
     if (existingResult) {
       // Update existing result
-      const { data: updatedResult, error: updateError } = await supabase
-        .from('match_results')
+      const { data: updatedResult, error: updateError } = await (supabase
+        .from('match_results') as any)
         .update({
           player_a_imp_score: playerAImpScore,
           player_b_imp_score: playerBImpScore,
@@ -123,8 +123,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ data: updatedResult, error: null });
     } else {
       // Insert new result
-      const { data: newResult, error: insertError } = await supabase
-        .from('match_results')
+      const { data: newResult, error: insertError } = await (supabase
+        .from('match_results') as any)
         .insert({
           match_id: matchId,
           player_a_imp_score: playerAImpScore,
@@ -214,8 +214,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update the result
-    const { data: updatedResult, error: updateError } = await supabase
-      .from('match_results')
+    const { data: updatedResult, error: updateError } = await (supabase
+      .from('match_results') as any)
       .update({
         player_a_imp_score: playerAImpScore,
         player_b_imp_score: playerBImpScore,
@@ -274,7 +274,7 @@ export async function GET(request: NextRequest) {
       .from('matches')
       .select('id, player_a_id, player_b_id')
       .eq('id', matchId)
-      .single();
+      .single<{ id: string; player_a_id: string; player_b_id: string }>();
 
     if (matchError || !match) {
       return NextResponse.json(

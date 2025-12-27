@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AuthForm from '@/components/auth/AuthForm';
 import { useAuth } from '@/lib/hooks/useAuth';
-import type { RegistrationData } from '@/lib/utils/validation';
+import type { RegistrationData, LoginData } from '@/lib/utils/validation';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -13,21 +13,28 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (data: RegistrationData) => {
+  const handleSubmit = async (data: LoginData | RegistrationData) => {
+    // Type guard to ensure we have RegistrationData
+    if (!('funbridge_username' in data) || !('confirmPassword' in data)) {
+      setError('Invalid registration data');
+      return;
+    }
+
+    const registrationData = data as RegistrationData;
     setLoading(true);
     setError(null);
 
     try {
-      if (!data.funbridge_username) {
+      if (!registrationData.funbridge_username) {
         setError('Funbridge username is required');
         setLoading(false);
         return;
       }
 
       const response = await register({
-        name: data.name,
-        funbridge_username: data.funbridge_username,
-        password: data.password,
+        name: registrationData.name,
+        funbridge_username: registrationData.funbridge_username,
+        password: registrationData.password,
       });
 
       if (response.error) {

@@ -58,19 +58,27 @@ export default function AuthForm({ mode, onSubmit, loading = false, error }: Aut
       const formData: RegistrationData = { password, name, funbridge_username: funbridgeUsername, confirmPassword };
       const validation = validateRegistration(formData);
       if (validation.errors[field as keyof typeof validation.errors]) {
-        setErrors((prev) => ({
-          ...prev,
-          [field]: validation.errors[field as keyof typeof validation.errors],
-        }));
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          const errorValue = validation.errors[field as keyof typeof validation.errors];
+          if (errorValue) {
+            newErrors[field] = errorValue;
+          }
+          return newErrors;
+        });
       }
     } else {
       const formData: LoginData = { name: loginName, password };
       const validation = validateLogin(formData);
       if (validation.errors[field as keyof typeof validation.errors]) {
-        setErrors((prev) => ({
-          ...prev,
-          [field]: validation.errors[field as keyof typeof validation.errors],
-        }));
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          const errorValue = validation.errors[field as keyof typeof validation.errors];
+          if (errorValue) {
+            newErrors[field] = errorValue;
+          }
+          return newErrors;
+        });
       }
     }
   };

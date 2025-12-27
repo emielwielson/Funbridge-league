@@ -56,8 +56,8 @@ export async function PUT(request: NextRequest) {
     const supabase = getSupabaseClient();
 
     // Update handicap
-    const { data: updatedUser, error: updateError } = await supabase
-      .from('users')
+    const { data: updatedUser, error: updateError } = await (supabase
+      .from('users') as any)
       .update({
         handicap: Math.round(handicap), // Ensure it's an integer
         updated_at: new Date().toISOString(),

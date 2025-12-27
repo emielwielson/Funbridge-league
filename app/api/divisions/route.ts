@@ -171,8 +171,10 @@ export async function DELETE(request: NextRequest) {
       .from('leagues')
       .select('id, status')
       .in('status', ['draft', 'active']);
+    
+    const typedLeagues = (leagues || []) as Array<{ id: string; status: string }>;
 
-    if (!leagues || leagues.length === 0) {
+    if (!typedLeagues || typedLeagues.length === 0) {
       // No leagues exist, safe to delete division
       const { error: deleteError } = await supabase
         .from('divisions')
@@ -190,7 +192,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if any league is active (can't delete division if league is active)
-    const activeLeague = leagues.find(l => l.status === 'active');
+    const activeLeague = typedLeagues.find(l => l.status === 'active');
     if (activeLeague) {
       return NextResponse.json(
         { data: null, error: 'Cannot delete division while a league is active. Please finish the active league first.' },
@@ -199,7 +201,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get all player assignments for this division across all draft leagues
-    const draftLeagueIds = leagues.filter(l => l.status === 'draft').map(l => l.id);
+    const draftLeagueIds = typedLeagues.filter(l => l.status === 'draft').map(l => l.id);
     
     if (draftLeagueIds.length > 0) {
       // Remove all player assignments for this division (moves players to "no division")
@@ -303,9 +305,12 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update division name
-    const { data: updatedDivision, error: updateError } = await supabase
-      .from('divisions')
-      .update({ name: name.trim(), updated_at: new Date().toISOString() } as any)
+    const { data: updatedDivision, error: updateError } = await (supabase
+      .from('divisions') as any)
+      .update({ 
+        name: name.trim(), 
+        updated_at: new Date().toISOString() 
+      } as any)
       .eq('id', divisionId)
       .select()
       .single();

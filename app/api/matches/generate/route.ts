@@ -82,7 +82,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get unique division IDs
-    const uniqueDivisionIds = [...new Set(playerDivisions.map((pd) => pd.division_id))];
+    const typedPlayerDivisions = playerDivisions as Array<{ division_id: string }>;
+    const uniqueDivisionIds = [...new Set(typedPlayerDivisions.map((pd) => pd.division_id))];
 
     let totalMatchesGenerated = 0;
     const warnings: string[] = [];
@@ -106,7 +107,8 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const playerIds = players.map((p) => p.player_id);
+      const typedPlayers = players as Array<{ player_id: string }>;
+      const playerIds = typedPlayers.map((p) => p.player_id);
       const matchPairs = generateRoundRobinMatches(playerIds);
 
       if (matchPairs.length === 0) {
