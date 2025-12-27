@@ -113,21 +113,23 @@ export default function MatchList({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     {isEditing ? (
-                      <ScoreEntryForm
-                        match={match}
-                        currentUserId={currentUserId}
-                        playerAHandicap={playerAHandicap}
-                        playerBHandicap={playerBHandicap}
-                        onSubmit={async (playerAImp, playerBImp) => {
-                          // Refresh matches after submission
-                          if (onResultSubmit) {
-                            await onResultSubmit();
-                          }
-                          // Close the form
-                          setEditingMatchId(null);
-                        }}
-                        onCancel={() => setEditingMatchId(null)}
-                      />
+                      <div className="bg-white rounded-lg shadow border border-gray-200 p-4 min-w-[300px]">
+                        <ScoreEntryForm
+                          match={match}
+                          currentUserId={currentUserId}
+                          playerAHandicap={playerAHandicap}
+                          playerBHandicap={playerBHandicap}
+                          onSubmit={async (playerAImp, playerBImp) => {
+                            // Refresh matches after submission
+                            if (onResultSubmit) {
+                              await onResultSubmit();
+                            }
+                            // Close the form
+                            setEditingMatchId(null);
+                          }}
+                          onCancel={() => setEditingMatchId(null)}
+                        />
+                      </div>
                     ) : (
                       canEdit && (
                         <button

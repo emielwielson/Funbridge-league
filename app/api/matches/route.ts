@@ -75,24 +75,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // If fetching by division, ensure user is in that division (unless admin)
-    if (divisionId && user.role !== 'admin') {
-      const { data: assignment } = await supabase
-        .from('player_divisions')
-        .select('division_id')
-        .eq('player_id', user.id)
-        .eq('league_id', leagueId)
-        .eq('division_id', divisionId)
-        .maybeSingle();
-
-      if (!assignment) {
-        return NextResponse.json(
-          { data: null, error: 'Forbidden: You can only access matches from your division' },
-          { status: 403 }
-        );
-      }
-    }
-
     // Build query to fetch matches with player names, handicaps, and results
     let query = supabase
       .from('matches')

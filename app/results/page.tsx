@@ -107,14 +107,15 @@ export default function ResultsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Results & Rankings</h2>
-            <p className="mt-1 text-sm text-gray-600">
-              View match results and current league rankings
-            </p>
-          </div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Results & Rankings</h2>
+              <p className="mt-1 text-sm text-gray-600">
+                View match results and current league rankings
+              </p>
+            </div>
 
           {loading && !activeLeague && (
             <div className="flex items-center justify-center py-12">
@@ -139,13 +140,14 @@ export default function ResultsPage() {
               {/* Division Selector */}
               {divisions.length > 0 && (
                 <div className="bg-white rounded-lg shadow p-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Select Division
                   </label>
                   <select
                     value={selectedDivisionId || ''}
                     onChange={(e) => handleDivisionChange(e.target.value)}
-                    className="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full md:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white"
+                    style={{ color: 'black', backgroundColor: 'white' }}
                   >
                     {divisions.map((division) => (
                       <option key={division.id} value={division.id}>
@@ -200,6 +202,7 @@ export default function ResultsPage() {
               </div>
             </>
           )}
+          </div>
         </div>
       </div>
     </ProtectedRoute>

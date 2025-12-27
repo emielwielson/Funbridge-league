@@ -26,3 +26,27 @@ body {
     rgb(var(--background-start-rgb));
 }
 
+/* Ensure form inputs have proper text color - always white background with black text */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+  color: rgb(0, 0, 0) !important; /* black text */
+  background-color: rgb(255, 255, 255) !important; /* white background */
+}
+
+/* Override dark mode for form inputs - always use white background with black text */
+@media (prefers-color-scheme: dark) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  select,
+  textarea {
+    color: rgb(0, 0, 0) !important; /* black text */
+    background-color: rgb(255, 255, 255) !important; /* white background */
+  }
+}
+
