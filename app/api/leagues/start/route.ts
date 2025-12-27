@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/api/auth-utils';
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/lib/supabase/database.types';
 import type { League } from '@/lib/types/league';
+import { generateRoundRobinMatches } from '@/lib/utils/match-generation';
 
 export const runtime = 'nodejs';
 
@@ -24,8 +25,7 @@ function getSupabaseClient() {
 
 /**
  * POST /api/leagues/start - Start a league (admin only)
- * Updates status to 'active'
- * Note: Match generation will be handled in Task 4.0
+ * Updates status to 'active' and automatically generates matches for all divisions
  */
 export async function POST(request: NextRequest) {
   try {
@@ -86,7 +86,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Update league status to active
-    // Note: Match generation will be handled in Task 4.0
     const { data: updatedLeague, error: updateError } = await supabase
       .from('leagues')
       .update({ status: 'active', updated_at: new Date().toISOString() } as any)
@@ -99,6 +98,74 @@ export async function POST(request: NextRequest) {
         { data: null, error: updateError.message || 'Failed to start league' },
         { status: 500 }
       );
+    }
+
+    // Generate matches for all divisions
+    try {
+      // Get all divisions that have players assigned in this league
+      const { data: playerDivisions, error: playerDivisionsError } = await supabase
+        .from('player_divisions')
+        .select('division_id')
+        .eq('league_id', leagueId);
+
+      if (playerDivisionsError) {
+        // Log error but don't fail the league start
+        console.error('Error fetching player divisions for match generation:', playerDivisionsError);
+      } else if (playerDivisions && playerDivisions.length > 0) {
+        // Get unique division IDs
+        const uniqueDivisionIds = [...new Set(playerDivisions.map((pd) => pd.division_id))];
+
+        let totalMatchesGenerated = 0;
+
+        // Generate matches for each division
+        for (const divisionId of uniqueDivisionIds) {
+          // Get all players in this division for this league
+          const { data: players, error: playersError } = await supabase
+            .from('player_divisions')
+            .select('player_id')
+            .eq('league_id', leagueId)
+            .eq('division_id', divisionId);
+
+          if (playersError || !players || players.length < 2) {
+            // Skip divisions with less than 2 players
+            continue;
+          }
+
+          const playerIds = players.map((p) => p.player_id);
+          const matchPairs = generateRoundRobinMatches(playerIds);
+
+          if (matchPairs.length === 0) {
+            continue;
+          }
+
+          // Insert matches into database
+          const matchesToInsert = matchPairs.map((pair) => ({
+            league_id: leagueId,
+            division_id: divisionId,
+            player_a_id: pair.playerA,
+            player_b_id: pair.playerB,
+          }));
+
+          const { error: insertError } = await supabase
+            .from('matches')
+            .insert(matchesToInsert as any);
+
+          if (insertError) {
+            // Log error but continue with other divisions
+            console.error(`Failed to insert matches for division ${divisionId}:`, insertError);
+            continue;
+          }
+
+          totalMatchesGenerated += matchPairs.length;
+        }
+
+        // Log match generation result
+        console.log(`Generated ${totalMatchesGenerated} matches for league ${leagueId}`);
+      }
+    } catch (matchGenError: any) {
+      // Log error but don't fail the league start
+      // The league is already active, matches can be generated manually if needed
+      console.error('Error during match generation:', matchGenError);
     }
 
     return NextResponse.json({ data: updatedLeague, error: null });

@@ -125,3 +125,205 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/**
+ * DELETE /api/divisions - Delete a division (admin only)
+ * Moves all players in the division to "no division" before deleting
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const { user, error: authError } = await requireAdmin(request);
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { data: null, error: authError || 'Unauthorized' },
+        { status: authError?.includes('Forbidden') ? 403 : 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const divisionId = searchParams.get('divisionId');
+
+    if (!divisionId) {
+      return NextResponse.json(
+        { data: null, error: 'Division ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getSupabaseClient();
+
+    // Check if division exists
+    const { data: division, error: divisionError } = await supabase
+      .from('divisions')
+      .select('id, name')
+      .eq('id', divisionId)
+      .single<{ id: string; name: string }>();
+
+    if (divisionError || !division) {
+      return NextResponse.json(
+        { data: null, error: 'Division not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get all leagues (active or draft) to check player assignments
+    const { data: leagues } = await supabase
+      .from('leagues')
+      .select('id, status')
+      .in('status', ['draft', 'active']);
+
+    if (!leagues || leagues.length === 0) {
+      // No leagues exist, safe to delete division
+      const { error: deleteError } = await supabase
+        .from('divisions')
+        .delete()
+        .eq('id', divisionId);
+
+      if (deleteError) {
+        return NextResponse.json(
+          { data: null, error: deleteError.message || 'Failed to delete division' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ data: { success: true }, error: null });
+    }
+
+    // Check if any league is active (can't delete division if league is active)
+    const activeLeague = leagues.find(l => l.status === 'active');
+    if (activeLeague) {
+      return NextResponse.json(
+        { data: null, error: 'Cannot delete division while a league is active. Please finish the active league first.' },
+        { status: 400 }
+      );
+    }
+
+    // Get all player assignments for this division across all draft leagues
+    const draftLeagueIds = leagues.filter(l => l.status === 'draft').map(l => l.id);
+    
+    if (draftLeagueIds.length > 0) {
+      // Remove all player assignments for this division (moves players to "no division")
+      const { error: removeAssignmentsError } = await supabase
+        .from('player_divisions')
+        .delete()
+        .eq('division_id', divisionId)
+        .in('league_id', draftLeagueIds);
+
+      if (removeAssignmentsError) {
+        return NextResponse.json(
+          { data: null, error: removeAssignmentsError.message || 'Failed to remove player assignments' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Now delete the division
+    const { error: deleteError } = await supabase
+      .from('divisions')
+      .delete()
+      .eq('id', divisionId);
+
+    if (deleteError) {
+      return NextResponse.json(
+        { data: null, error: deleteError.message || 'Failed to delete division' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ data: { success: true }, error: null });
+  } catch (error: any) {
+    console.error('Delete division error:', error);
+    return NextResponse.json(
+      { data: null, error: error.message || 'Failed to delete division' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PUT /api/divisions - Update a division name (admin only)
+ */
+export async function PUT(request: NextRequest) {
+  try {
+    const { user, error: authError } = await requireAdmin(request);
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { data: null, error: authError || 'Unauthorized' },
+        { status: authError?.includes('Forbidden') ? 403 : 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { divisionId, name } = body;
+
+    if (!divisionId || typeof divisionId !== 'string') {
+      return NextResponse.json(
+        { data: null, error: 'Division ID is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      return NextResponse.json(
+        { data: null, error: 'Division name is required' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getSupabaseClient();
+
+    // Check if division exists
+    const { data: division, error: divisionError } = await supabase
+      .from('divisions')
+      .select('id')
+      .eq('id', divisionId)
+      .single<{ id: string }>();
+
+    if (divisionError || !division) {
+      return NextResponse.json(
+        { data: null, error: 'Division not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check for duplicate name (excluding current division)
+    const { data: existing } = await supabase
+      .from('divisions')
+      .select('id')
+      .eq('name', name.trim())
+      .neq('id', divisionId)
+      .maybeSingle();
+
+    if (existing) {
+      return NextResponse.json(
+        { data: null, error: 'A division with this name already exists' },
+        { status: 400 }
+      );
+    }
+
+    // Update division name
+    const { data: updatedDivision, error: updateError } = await supabase
+      .from('divisions')
+      .update({ name: name.trim(), updated_at: new Date().toISOString() } as any)
+      .eq('id', divisionId)
+      .select()
+      .single();
+
+    if (updateError) {
+      return NextResponse.json(
+        { data: null, error: updateError.message || 'Failed to update division' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ data: updatedDivision, error: null });
+  } catch (error: any) {
+    console.error('Update division error:', error);
+    return NextResponse.json(
+      { data: null, error: error.message || 'Failed to update division' },
+      { status: 500 }
+    );
+  }
+}
+

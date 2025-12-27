@@ -121,3 +121,62 @@ export async function removePlayerFromDivision(
   }
 }
 
+/**
+ * Delete a division (admin only)
+ * Moves all players in the division to "no division" before deleting
+ */
+export async function deleteDivision(divisionId: string): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const response = await fetch(
+      `/api/divisions?divisionId=${encodeURIComponent(divisionId)}`,
+      {
+        method: 'DELETE',
+        credentials: 'include',
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { data: null, error: data.error || 'Failed to delete division' };
+    }
+
+    return { data: data.data, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message || 'Failed to delete division' };
+  }
+}
+
+/**
+ * Update a division name (admin only)
+ */
+export async function updateDivision(
+  divisionId: string,
+  name: string
+): Promise<ApiResponse<Division>> {
+  try {
+    if (!name || name.trim() === '') {
+      return { data: null, error: 'Division name is required' };
+    }
+
+    const response = await fetch('/api/divisions', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ divisionId, name }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { data: null, error: data.error || 'Failed to update division' };
+    }
+
+    return { data: data.data, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message || 'Failed to update division' };
+  }
+}
+

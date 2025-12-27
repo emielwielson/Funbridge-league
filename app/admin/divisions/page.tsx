@@ -1,9 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import DivisionManager from '@/components/admin/DivisionManager';
 import PlayerAssignment from '@/components/admin/PlayerAssignment';
 
 export default function AdminDivisionsPage() {
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleDivisionChange = () => {
+    // Force refresh of PlayerAssignment when divisions change
+    setRefreshKey(prev => prev + 1);
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -13,11 +21,15 @@ export default function AdminDivisionsPage() {
         </p>
       </div>
 
-      <DivisionManager />
+      <DivisionManager 
+        onDivisionCreated={handleDivisionChange}
+        onDivisionDeleted={handleDivisionChange}
+        onDivisionUpdated={handleDivisionChange}
+      />
 
       <div className="mt-8">
         <h3 className="text-xl font-semibold text-gray-900 mb-4">Player Assignment</h3>
-        <PlayerAssignment />
+        <PlayerAssignment key={refreshKey} onAssignmentChange={handleDivisionChange} />
       </div>
     </div>
   );

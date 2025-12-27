@@ -1,38 +1,64 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAllDivisions, createDivision } from '@/lib/api/divisions';
+import { getAllDivisions, createDivision, deleteDivision, updateDivision } from '@/lib/api/divisions';
+import { getActiveLeague, getDraftLeague } from '@/lib/api/leagues';
 import type { Division } from '@/lib/types/division';
+import type { League } from '@/lib/types/league';
 
 interface DivisionManagerProps {
   onDivisionCreated?: () => void;
+  onDivisionDeleted?: () => void;
+  onDivisionUpdated?: () => void;
 }
 
-export default function DivisionManager({ onDivisionCreated }: DivisionManagerProps) {
+export default function DivisionManager({ onDivisionCreated, onDivisionDeleted, onDivisionUpdated }: DivisionManagerProps) {
   const [divisions, setDivisions] = useState<Division[]>([]);
+  const [currentLeague, setCurrentLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newDivisionName, setNewDivisionName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [deletingDivisionId, setDeletingDivisionId] = useState<string | null>(null);
+  const [editingDivisionId, setEditingDivisionId] = useState<string | null>(null);
+  const [editingDivisionName, setEditingDivisionName] = useState<string>('');
+  const [updatingDivisionId, setUpdatingDivisionId] = useState<string | null>(null);
 
-  const fetchDivisions = async () => {
+  const fetchData = async () => {
     setLoading(true);
     setError(null);
 
-    const { data, error: fetchError } = await getAllDivisions();
+    try {
+      // Fetch league status
+      const [activeResult, draftResult] = await Promise.all([
+        getActiveLeague(),
+        getDraftLeague(),
+      ]);
+      
+      const league = activeResult.data || draftResult.data;
+      if (league) {
+        setCurrentLeague(league);
+      }
 
-    if (fetchError || !data) {
-      setError(fetchError || 'Failed to load divisions');
+      // Fetch divisions
+      const { data, error: fetchError } = await getAllDivisions();
+
+      if (fetchError || !data) {
+        setError(fetchError || 'Failed to load divisions');
+        setLoading(false);
+        return;
+      }
+
+      setDivisions(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load data');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setDivisions(data);
-    setLoading(false);
   };
 
   useEffect(() => {
-    fetchDivisions();
+    fetchData();
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -59,6 +85,82 @@ export default function DivisionManager({ onDivisionCreated }: DivisionManagerPr
     setCreating(false);
     if (onDivisionCreated) {
       onDivisionCreated();
+    }
+  };
+
+  const handleDelete = async (divisionId: string, divisionName: string) => {
+    // Check if league is active
+    if (currentLeague?.status === 'active') {
+      setError('Cannot delete division while a league is active. Please finish the active league first.');
+      return;
+    }
+
+    // Confirm deletion
+    const confirmed = confirm(
+      `Are you sure you want to delete "${divisionName}"?\n\nAll players in this division will be moved to "No Division".`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingDivisionId(divisionId);
+    setError(null);
+
+    const { error: deleteError } = await deleteDivision(divisionId);
+
+    if (deleteError) {
+      setError(deleteError);
+      setDeletingDivisionId(null);
+      return;
+    }
+
+    // Remove from local state
+    setDivisions((prev) => prev.filter((d) => d.id !== divisionId));
+    setDeletingDivisionId(null);
+    
+    if (onDivisionDeleted) {
+      onDivisionDeleted();
+    }
+  };
+
+  const handleStartEdit = (division: Division) => {
+    setEditingDivisionId(division.id);
+    setEditingDivisionName(division.name);
+    setError(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingDivisionId(null);
+    setEditingDivisionName('');
+    setError(null);
+  };
+
+  const handleSaveEdit = async (divisionId: string) => {
+    if (!editingDivisionName.trim()) {
+      setError('Division name is required');
+      return;
+    }
+
+    setUpdatingDivisionId(divisionId);
+    setError(null);
+
+    const { data, error: updateError } = await updateDivision(divisionId, editingDivisionName.trim());
+
+    if (updateError || !data) {
+      setError(updateError || 'Failed to update division');
+      setUpdatingDivisionId(null);
+      return;
+    }
+
+    // Update local state
+    setDivisions((prev) => prev.map((d) => (d.id === divisionId ? data : d)));
+    setEditingDivisionId(null);
+    setEditingDivisionName('');
+    setUpdatingDivisionId(null);
+    
+    if (onDivisionUpdated) {
+      onDivisionUpdated();
     }
   };
 
@@ -111,18 +213,89 @@ export default function DivisionManager({ onDivisionCreated }: DivisionManagerPr
           </div>
         ) : (
           <ul className="divide-y divide-gray-200">
-            {divisions.map((division) => (
-              <li key={division.id} className="px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{division.name}</p>
-                    <p className="text-xs text-gray-500">
-                      Created {new Date(division.created_at).toLocaleDateString()}
-                    </p>
+            {divisions.map((division) => {
+              const isEditing = editingDivisionId === division.id;
+              const isUpdating = updatingDivisionId === division.id;
+
+              return (
+                <li key={division.id} className="px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      {isEditing ? (
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="text"
+                            value={editingDivisionName}
+                            onChange={(e) => {
+                              setEditingDivisionName(e.target.value);
+                              setError(null);
+                            }}
+                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled={isUpdating}
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleSaveEdit(division.id)}
+                            disabled={isUpdating || !editingDivisionName.trim()}
+                            className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isUpdating ? 'Saving...' : 'Save'}
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            disabled={isUpdating}
+                            className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <p 
+                            className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                            onClick={() => handleStartEdit(division)}
+                            title="Click to edit division name"
+                          >
+                            {division.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Created {new Date(division.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    {!isEditing && (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleStartEdit(division)}
+                          disabled={currentLeague?.status === 'active'}
+                          className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={
+                            currentLeague?.status === 'active'
+                              ? 'Cannot edit division while league is active'
+                              : 'Edit division name'
+                          }
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(division.id, division.name)}
+                          disabled={deletingDivisionId === division.id || currentLeague?.status === 'active'}
+                          className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={
+                            currentLeague?.status === 'active'
+                              ? 'Cannot delete division while league is active'
+                              : 'Delete division (players will be moved to "No Division")'
+                          }
+                        >
+                          {deletingDivisionId === division.id ? 'Deleting...' : 'Delete'}
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
