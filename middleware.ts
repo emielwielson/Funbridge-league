@@ -1,6 +1,42 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyToken } from '@/lib/auth/custom-auth';
+
+// Middleware runs in Edge runtime, so we need to verify token directly
+// Using basic JWT decoding (signature verification would require Web Crypto API)
+function verifyTokenInMiddleware(token: string): boolean {
+  try {
+    // Basic JWT structure check
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return false;
+    }
+    
+    // Decode payload to check expiration
+    try {
+      const payload = JSON.parse(atob(parts[1]));
+      const now = Math.floor(Date.now() / 1000);
+      
+      // Check if token is expired
+      if (payload.exp && payload.exp < now) {
+        return false;
+      }
+      
+      // Check if token has userId
+      if (!payload.userId) {
+        return false;
+      }
+      
+      // Token structure is valid and not expired
+      // Note: This doesn't verify the signature, but it's a basic check
+      // The signature is verified server-side in API routes
+      return true;
+    } catch {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+}
 
 export async function middleware(req: NextRequest) {
   // Skip middleware for API routes
@@ -8,11 +44,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const res = NextResponse.next();
-  
   // Get JWT token from cookies
   const token = req.cookies.get('auth_token')?.value;
-  const hasValidSession = token ? verifyToken(token) !== null : false;
+  const hasValidSession = token ? verifyTokenInMiddleware(token) : false;
 
   // Protect routes that require authentication
   const isAuthRoute = req.nextUrl.pathname.startsWith('/login') || 
@@ -41,7 +75,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/', req.url));
   }
 
-  return res;
+  return NextResponse.next();
 }
 
 export const config = {

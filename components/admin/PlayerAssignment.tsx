@@ -138,7 +138,7 @@ export default function PlayerAssignment({ onAssignmentChange }: PlayerAssignmen
     );
   }
 
-  const canAssign = activeLeague?.status === 'draft';
+  const canAssign = currentLeague?.status === 'draft';
 
   return (
     <div className="space-y-4">

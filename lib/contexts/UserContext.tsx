@@ -18,8 +18,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const { user: currentUser } = await getCurrentUser();
-      setUser(currentUser);
+      setLoading(true);
+      const { user: currentUser, error } = await getCurrentUser();
+      if (error) {
+        console.error('Error getting user:', error);
+        setUser(null);
+      } else {
+        setUser(currentUser);
+      }
     } catch (error) {
       console.error('Error refreshing user:', error);
       setUser(null);
@@ -29,7 +35,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Initial load
+    // Initial load - set loading to true first
+    setLoading(true);
     refreshUser();
 
     // Listen to auth state changes
