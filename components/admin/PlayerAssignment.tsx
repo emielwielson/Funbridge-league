@@ -194,7 +194,7 @@ export default function PlayerAssignment({ onAssignmentChange }: PlayerAssignmen
               {users.map((user) => (
                 <div key={user.id} className="px-6 py-4 flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{user.username}</p>
+                    <p className="text-sm font-medium text-gray-900">{user.name}</p>
                     <p className="text-xs text-gray-500">
                       {user.division_name
                         ? `Currently in: ${user.division_name}`

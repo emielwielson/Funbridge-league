@@ -18,7 +18,17 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      const response = await register(data);
+      if (!data.funbridge_username) {
+        setError('Funbridge username is required');
+        setLoading(false);
+        return;
+      }
+
+      const response = await register({
+        name: data.name,
+        funbridge_username: data.funbridge_username,
+        password: data.password,
+      });
 
       if (response.error) {
         setError(response.error.message);

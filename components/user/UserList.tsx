@@ -97,10 +97,10 @@ export default function UserList({ onUserUpdate }: UserListProps) {
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Username
+              Name
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Email
+              Funbridge Username
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Role
@@ -120,10 +120,10 @@ export default function UserList({ onUserUpdate }: UserListProps) {
           {users.map((user) => (
             <tr key={user.id}>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {user.username}
+                {user.name}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {user.email || '-'}
+                {user.funbridge_username || '-'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <UserRoleBadge role={user.role} />
@@ -159,8 +159,10 @@ export default function UserList({ onUserUpdate }: UserListProps) {
           >
             <div className="flex justify-between items-start mb-2">
               <div>
-                <h3 className="text-lg font-medium text-gray-900">{user.username}</h3>
-                <p className="text-sm text-gray-500">{user.email || 'No email'}</p>
+                <h3 className="text-lg font-medium text-gray-900">{user.name}</h3>
+                <p className="text-sm text-gray-500">
+                  Funbridge: {user.funbridge_username || 'Not set'}
+                </p>
               </div>
               <UserRoleBadge role={user.role} />
             </div>

@@ -110,7 +110,7 @@ export default function Navbar() {
                 <div className="flex items-center space-x-3">
                   <div className="text-right">
                     <div className="text-sm font-medium text-gray-900">
-                      {user.username}
+                      {user.name}
                     </div>
                     <div className="text-xs text-gray-500 capitalize">
                       {user.role}

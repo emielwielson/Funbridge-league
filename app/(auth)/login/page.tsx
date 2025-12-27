@@ -19,9 +19,9 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      // Convert LoginData (username) to LoginParams (username)
+      // Convert LoginData (name) to LoginParams (name)
       const response = await login({
-        username: data.username,
+        name: data.name,
         password: data.password,
       });
 

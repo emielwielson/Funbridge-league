@@ -16,28 +16,34 @@ export interface Database {
       users: {
         Row: {
           id: string;
-          username: string;
+          name: string;
           password_hash: string;
           role: 'player' | 'admin';
           handicap: number;
+          email?: string | null;
+          funbridge_username?: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          username: string;
+          name: string;
           password_hash: string;
           role?: 'player' | 'admin';
           handicap?: number;
+          email?: string | null;
+          funbridge_username?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          username?: string;
+          name?: string;
           password_hash?: string;
           role?: 'player' | 'admin';
           handicap?: number;
+          email?: string | null;
+          funbridge_username?: string | null;
           created_at?: string;
           updated_at?: string;
         };

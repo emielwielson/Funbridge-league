@@ -6,8 +6,9 @@ export type UserRole = 'player' | 'admin';
 
 export interface User {
   id: string;
-  username: string;
-  email?: string;
+  name: string;
+  email?: string; // Internal use only (for Supabase Auth)
+  funbridge_username?: string;
   role: UserRole;
   handicap: number;
   created_at?: string;
@@ -23,7 +24,7 @@ export interface AuthUser {
 }
 
 export interface UserProfile extends User {
-  email: string;
+  funbridge_username?: string;
 }
 
 export interface AuthError {

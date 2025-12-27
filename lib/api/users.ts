@@ -55,7 +55,7 @@ export async function getAllUsers(): Promise<ApiResponse<UserWithDivision[]>> {
     const { data: users, error: usersError } = await supabase
       .from('users')
       .select('*')
-      .order('username', { ascending: true });
+      .order('name', { ascending: true });
 
     if (usersError) {
       return { data: null, error: mapError(usersError) };

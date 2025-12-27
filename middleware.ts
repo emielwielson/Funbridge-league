@@ -1,34 +1,18 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verifyToken } from '@/lib/auth/custom-auth';
 
 export async function middleware(req: NextRequest) {
+  // Skip middleware for API routes
+  if (req.nextUrl.pathname.startsWith('/api')) {
+    return NextResponse.next();
+  }
+
   const res = NextResponse.next();
   
-  // Create Supabase client for middleware
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return req.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: any) {
-          req.cookies.set({ name, value, ...options });
-          res.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: any) {
-          req.cookies.set({ name, value: '', ...options });
-          res.cookies.set({ name, value: '', ...options });
-        },
-      },
-    }
-  );
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // Get JWT token from cookies
+  const token = req.cookies.get('auth_token')?.value;
+  const hasValidSession = token ? verifyToken(token) !== null : false;
 
   // Protect routes that require authentication
   const isAuthRoute = req.nextUrl.pathname.startsWith('/login') || 
@@ -37,7 +21,7 @@ export async function middleware(req: NextRequest) {
   const isProtectedRoute = !isAuthRoute && req.nextUrl.pathname !== '/';
 
   // If accessing protected route without session, redirect to login
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !hasValidSession) {
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/login';
     redirectUrl.searchParams.set('redirect', req.nextUrl.pathname);
@@ -45,7 +29,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Admin routes require authentication (admin check done in ProtectedRoute component)
-  if (isAdminRoute && !session) {
+  if (isAdminRoute && !hasValidSession) {
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/login';
     redirectUrl.searchParams.set('redirect', req.nextUrl.pathname);
@@ -53,7 +37,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // If accessing auth routes with session, redirect to home
-  if (isAuthRoute && session) {
+  if (isAuthRoute && hasValidSession) {
     return NextResponse.redirect(new URL('/', req.url));
   }
 
@@ -66,9 +50,9 @@ export const config = {
      * Match all request paths except for the ones starting with:
      * - _next/static (static files)
      * - _next/image (image optimization files)
+     * - api (API routes)
      * - favicon.ico (favicon file)
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|api|favicon.ico).*)',
   ],
 };
-
