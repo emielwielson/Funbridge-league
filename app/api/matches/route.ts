@@ -108,8 +108,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Log the raw matches data for debugging
+    console.log('Raw matches from database:', JSON.stringify(matches, null, 2));
+
     // Transform the data to MatchWithResult format
-    const matchesWithResults: MatchWithResult[] = (matches || []).map((match: any) => ({
+    const matchesWithResults: MatchWithResult[] = (matches || []).map((match: any) => {
+      console.log('Processing match:', match.id, 'match_results:', match.match_results);
+      return {
       id: match.id,
       league_id: match.league_id,
       division_id: match.division_id,
@@ -120,18 +125,33 @@ export async function GET(request: NextRequest) {
       player_b_name: match.player_b?.name,
       player_a_handicap: match.player_a?.handicap ?? 0,
       player_b_handicap: match.player_b?.handicap ?? 0,
-      result: match.match_results && match.match_results.length > 0
-        ? {
-            id: match.match_results[0].id,
-            match_id: match.match_results[0].match_id,
-            player_a_imp_score: match.match_results[0].player_a_imp_score,
-            player_b_imp_score: match.match_results[0].player_b_imp_score,
-            entered_by_user_id: match.match_results[0].entered_by_user_id,
-            created_at: match.match_results[0].created_at,
-            updated_at: match.match_results[0].updated_at,
-          }
-        : undefined,
-    }));
+      result: (() => {
+        // Handle different possible structures: array, single object, or null
+        const results = match.match_results;
+        if (!results) return undefined;
+        
+        // If it's an array, get the first element
+        const result = Array.isArray(results) ? results[0] : results;
+        
+        // If we have a result object with the required fields
+        if (result && result.id && result.match_id !== undefined) {
+          return {
+            id: result.id,
+            match_id: result.match_id,
+            player_a_imp_score: result.player_a_imp_score,
+            player_b_imp_score: result.player_b_imp_score,
+            entered_by_user_id: result.entered_by_user_id,
+            created_at: result.created_at,
+            updated_at: result.updated_at,
+          };
+        }
+        
+        return undefined;
+      })(),
+      };
+    });
+    
+    console.log('Transformed matches:', JSON.stringify(matchesWithResults, null, 2));
 
     return NextResponse.json({ data: matchesWithResults, error: null });
   } catch (error: any) {

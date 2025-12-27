@@ -78,10 +78,16 @@ export default function ScoreEntryForm({
       }
 
       setSuccess(true);
-      setLoading(false);
-
-      // Call the onSubmit callback
-      await onSubmit(playerAImpNum, playerBImpNum);
+      
+      // Call the onSubmit callback to refresh data (keep loading true during refresh)
+      try {
+        await onSubmit(playerAImpNum, playerBImpNum);
+      } catch (refreshError: any) {
+        console.error('Error refreshing data after submission:', refreshError);
+        // Don't show error to user if submission was successful, just log it
+      } finally {
+        setLoading(false);
+      }
 
       // Reset form after a short delay
       setTimeout(() => {
