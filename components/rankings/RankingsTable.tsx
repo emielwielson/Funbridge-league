@@ -1,6 +1,8 @@
 'use client';
 
 import type { PlayerRanking } from '@/lib/types/rankings';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Skeleton from '@/components/ui/Skeleton';
 
 interface RankingsTableProps {
   rankings: PlayerRanking[];
@@ -10,8 +12,48 @@ interface RankingsTableProps {
 export default function RankingsTable({ rankings, loading }: RankingsTableProps) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-gray-600">Loading rankings...</div>
+      <div className="space-y-4">
+        {/* Desktop Skeleton */}
+        <div className="hidden md:block">
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                    <th key={i} className="px-6 py-3">
+                      <Skeleton height={20} />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <tr key={i}>
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((j) => (
+                      <td key={j} className="px-6 py-4">
+                        <Skeleton height={16} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {/* Mobile Skeleton */}
+        <div className="md:hidden space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="bg-white rounded-lg shadow p-4 border border-gray-200">
+              <Skeleton height={24} className="mb-3" />
+              <div className="grid grid-cols-2 gap-2">
+                <Skeleton height={16} />
+                <Skeleton height={16} />
+                <Skeleton height={16} />
+                <Skeleton height={16} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

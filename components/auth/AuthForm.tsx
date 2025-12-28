@@ -3,6 +3,9 @@
 import { useState, FormEvent } from 'react';
 import { validateLogin, validateRegistration } from '@/lib/utils/validation';
 import type { LoginData, RegistrationData } from '@/lib/utils/validation';
+import Alert from '@/components/ui/Alert';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 
 interface AuthFormProps {
   mode: 'login' | 'register';
@@ -120,167 +123,96 @@ export default function AuthForm({ mode, onSubmit, loading = false, error }: Aut
   return (
     <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-md mx-auto">
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <Alert variant="error" dismissible onDismiss={() => {}}>
           {error}
-        </div>
+        </Alert>
       )}
 
       {mode === 'login' ? (
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium mb-1 text-gray-900">
-            Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={loginName}
-            onChange={(e) => {
-              setLoginName(e.target.value);
-              if (errors.name) {
-                setErrors((prev) => ({ ...prev, name: '' }));
-              }
-            }}
-            onBlur={() => handleBlur('name')}
-            placeholder="Enter your name"
-            className={`w-full px-3 py-2 border rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              touched.name && errors.name ? 'border-red-500' : 'border-gray-300'
-            }`}
-            required
-            disabled={loading}
-          />
-          {!touched.name && (
-            <p className="mt-1 text-xs text-gray-500">Enter your full name</p>
-          )}
-          {touched.name && errors.name && (
-            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-          )}
-        </div>
-      ) : (
-        <>
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-1 text-gray-900">
-              Name (First & Last) <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={name}
-              onChange={handleNameChange}
-              onBlur={() => handleBlur('name')}
-              placeholder="John Doe"
-              className={`w-full px-3 py-2 border rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                touched.name && errors.name ? 'border-red-500' : 'border-gray-300'
-              }`}
-              required
-              disabled={loading}
-            />
-            {!touched.name && (
-              <p className="mt-1 text-xs text-gray-500">
-                Enter your first and last name
-              </p>
-            )}
-            {touched.name && errors.name && (
-              <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="funbridge_username" className="block text-sm font-medium mb-1 text-gray-900">
-              Funbridge Username <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="funbridge_username"
-              name="funbridge_username"
-              value={funbridgeUsername}
-              onChange={handleFunbridgeUsernameChange}
-              onBlur={() => handleBlur('funbridge_username')}
-              placeholder="Your Funbridge username"
-              className={`w-full px-3 py-2 border rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                touched.funbridge_username && errors.funbridge_username ? 'border-red-500' : 'border-gray-300'
-              }`}
-              required
-              disabled={loading}
-            />
-            {!touched.funbridge_username && (
-              <p className="mt-1 text-xs text-gray-500">
-                Enter your Funbridge username
-              </p>
-            )}
-            {touched.funbridge_username && errors.funbridge_username && (
-              <p className="mt-1 text-sm text-red-600">{errors.funbridge_username}</p>
-            )}
-          </div>
-        </>
-      )}
-
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium mb-1 text-gray-900">
-          Password <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          value={password}
-          onChange={handlePasswordChange}
-          onBlur={() => handleBlur('password')}
-          placeholder="Enter your password"
-          className={`w-full px-3 py-2 border rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            touched.password && errors.password ? 'border-red-500' : 'border-gray-300'
-          }`}
+        <Input
+          type="text"
+          label="Name"
+          value={loginName}
+          onChange={(e) => {
+            setLoginName(e.target.value);
+            if (errors.name) {
+              setErrors((prev) => ({ ...prev, name: '' }));
+            }
+          }}
+          onBlur={() => handleBlur('name')}
+          placeholder="Enter your name"
+          error={touched.name ? errors.name : undefined}
+          helperText={!touched.name ? 'Enter your full name' : undefined}
           required
           disabled={loading}
         />
-        {!touched.password && (
-          <p className="mt-1 text-xs text-gray-500">
-            Minimum 6 characters (8+ recommended for better security)
-          </p>
-        )}
-        {touched.password && errors.password && (
-          <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-        )}
-      </div>
-
-      {mode === 'register' && (
-        <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1 text-gray-900">
-            Confirm Password <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            value={confirmPassword}
-            onChange={handleConfirmPasswordChange}
-            onBlur={() => handleBlur('confirmPassword')}
-            placeholder="Re-enter your password"
-            className={`w-full px-3 py-2 border rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              touched.confirmPassword && errors.confirmPassword
-                ? 'border-red-500'
-                : 'border-gray-300'
-            }`}
+      ) : (
+        <>
+          <Input
+            type="text"
+            label="Name (First & Last)"
+            value={name}
+            onChange={handleNameChange}
+            onBlur={() => handleBlur('name')}
+            placeholder="John Doe"
+            error={touched.name ? errors.name : undefined}
+            helperText={!touched.name ? 'Enter your first and last name' : undefined}
             required
             disabled={loading}
           />
-          {!touched.confirmPassword && (
-            <p className="mt-1 text-xs text-gray-500">Must match your password</p>
-          )}
-          {touched.confirmPassword && errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
-          )}
-        </div>
+
+          <Input
+            type="text"
+            label="Funbridge Username"
+            value={funbridgeUsername}
+            onChange={handleFunbridgeUsernameChange}
+            onBlur={() => handleBlur('funbridge_username')}
+            placeholder="Your Funbridge username"
+            error={touched.funbridge_username ? errors.funbridge_username : undefined}
+            helperText={!touched.funbridge_username ? 'Enter your Funbridge username' : undefined}
+            required
+            disabled={loading}
+          />
+        </>
       )}
 
-      <button
-        type="submit"
+      <Input
+        type="password"
+        label="Password"
+        value={password}
+        onChange={handlePasswordChange}
+        onBlur={() => handleBlur('password')}
+        placeholder="Enter your password"
+        error={touched.password ? errors.password : undefined}
+        helperText={!touched.password ? 'Minimum 6 characters (8+ recommended for better security)' : undefined}
+        required
         disabled={loading}
-        className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      />
+
+      {mode === 'register' && (
+        <Input
+          type="password"
+          label="Confirm Password"
+          value={confirmPassword}
+          onChange={handleConfirmPasswordChange}
+          onBlur={() => handleBlur('confirmPassword')}
+          placeholder="Re-enter your password"
+          error={touched.confirmPassword ? errors.confirmPassword : undefined}
+          helperText={!touched.confirmPassword ? 'Must match your password' : undefined}
+          required
+          disabled={loading}
+        />
+      )}
+
+      <Button
+        type="submit"
+        variant="primary"
+        fullWidth
+        loading={loading}
+        disabled={loading}
       >
-        {loading ? 'Loading...' : mode === 'login' ? 'Log In' : 'Register'}
-      </button>
+        {mode === 'login' ? 'Log In' : 'Register'}
+      </Button>
     </form>
   );
 }

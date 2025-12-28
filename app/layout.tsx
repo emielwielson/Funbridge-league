@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { UserProvider } from '@/lib/contexts/UserContext'
 import Navbar from '@/components/layout/Navbar'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
 
 export const metadata: Metadata = {
   title: 'Online Bridge League Scoring Tool',
@@ -16,10 +17,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <UserProvider>
-          <Navbar />
-          <main>{children}</main>
-        </UserProvider>
+        <ErrorBoundary>
+          <UserProvider>
+            <Navbar />
+            <main>{children}</main>
+          </UserProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

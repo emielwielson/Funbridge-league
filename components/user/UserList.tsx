@@ -5,6 +5,10 @@ import { getAllUsers, promoteToAdmin } from '@/lib/api/users';
 import type { UserWithDivision } from '@/lib/types/user';
 import UserRoleBadge from './UserRoleBadge';
 import HandicapEditor from './HandicapEditor';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Skeleton from '@/components/ui/Skeleton';
+import Alert from '@/components/ui/Alert';
+import Button from '@/components/ui/Button';
 
 interface UserListProps {
   onUserUpdate?: () => void;
@@ -68,17 +72,56 @@ export default function UserList({ onUserUpdate }: UserListProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-gray-600">Loading users...</div>
+      <div className="space-y-4">
+        {/* Desktop Skeleton */}
+        <div className="hidden md:block">
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <th key={i} className="px-6 py-3">
+                      <Skeleton height={20} />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <tr key={i}>
+                    {[1, 2, 3, 4, 5, 6].map((j) => (
+                      <td key={j} className="px-6 py-4">
+                        <Skeleton height={16} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {/* Mobile Skeleton */}
+        <div className="md:hidden space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="bg-white rounded-lg shadow p-4 border border-gray-200">
+              <Skeleton height={24} className="mb-3" />
+              <div className="space-y-2">
+                <Skeleton height={16} />
+                <Skeleton height={16} />
+                <Skeleton height={16} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+      <Alert variant="error" dismissible>
         {error}
-      </div>
+      </Alert>
     );
   }
 
@@ -136,13 +179,15 @@ export default function UserList({ onUserUpdate }: UserListProps) {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">
                 {user.role !== 'admin' && (
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => handlePromote(user.id)}
+                    loading={promotingUserId === user.id}
                     disabled={promotingUserId === user.id}
-                    className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
                   >
-                    {promotingUserId === user.id ? 'Promoting...' : 'Promote to Admin'}
-                  </button>
+                    Promote to Admin
+                  </Button>
                 )}
               </td>
             </tr>
@@ -179,13 +224,15 @@ export default function UserList({ onUserUpdate }: UserListProps) {
               </div>
               {user.role !== 'admin' && (
                 <div className="pt-2">
-                  <button
+                  <Button
+                    variant="primary"
+                    fullWidth
                     onClick={() => handlePromote(user.id)}
+                    loading={promotingUserId === user.id}
                     disabled={promotingUserId === user.id}
-                    className="w-full px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {promotingUserId === user.id ? 'Promoting...' : 'Promote to Admin'}
-                  </button>
+                    Promote to Admin
+                  </Button>
                 </div>
               )}
             </div>

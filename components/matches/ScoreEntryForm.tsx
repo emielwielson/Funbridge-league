@@ -5,6 +5,9 @@ import type { MatchWithResult } from '@/lib/types/match';
 import { submitMatchResult } from '@/lib/api/match-results';
 import { calculateMatchOutcome } from '@/lib/utils/match-calculations';
 import type { MatchOutcome } from '@/lib/types/match';
+import Alert from '@/components/ui/Alert';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 
 interface ScoreEntryFormProps {
   match: MatchWithResult;
@@ -113,53 +116,41 @@ export default function ScoreEntryForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm">
+        <Alert variant="error" dismissible onDismiss={() => setError(null)}>
           {error}
-        </div>
+        </Alert>
       )}
 
       {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded text-sm">
+        <Alert variant="success" autoDismiss={2000} onDismiss={() => setSuccess(false)}>
           Score submitted successfully!
-        </div>
+        </Alert>
       )}
 
       <div className="space-y-3">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {match.player_a_name || 'Player A'} (Handicap: {playerAHandicap})
-          </label>
-          <input
-            type="number"
-            value={playerAImp}
-            onChange={(e) => {
-              setPlayerAImp(e.target.value);
-              setError(null);
-            }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white"
-            style={{ color: 'black', backgroundColor: 'white' }}
-            disabled={loading}
-            required
-          />
-        </div>
+        <Input
+          type="number"
+          label={`${match.player_a_name || 'Player A'} (Handicap: ${playerAHandicap})`}
+          value={playerAImp}
+          onChange={(e) => {
+            setPlayerAImp(e.target.value);
+            setError(null);
+          }}
+          disabled={loading}
+          required
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {match.player_b_name || 'Player B'} (Handicap: {playerBHandicap})
-          </label>
-          <input
-            type="number"
-            value={playerBImp}
-            onChange={(e) => {
-              setPlayerBImp(e.target.value);
-              setError(null);
-            }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white"
-            style={{ color: 'black', backgroundColor: 'white' }}
-            disabled={loading}
-            required
-          />
-        </div>
+        <Input
+          type="number"
+          label={`${match.player_b_name || 'Player B'} (Handicap: ${playerBHandicap})`}
+          value={playerBImp}
+          onChange={(e) => {
+            setPlayerBImp(e.target.value);
+            setError(null);
+          }}
+          disabled={loading}
+          required
+        />
 
         {outcome && (
           <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
@@ -177,22 +168,24 @@ export default function ScoreEntryForm({
       </div>
 
       <div className="flex space-x-3">
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          fullWidth
+          loading={loading}
           disabled={loading}
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Submitting...' : match.result ? 'Update Score' : 'Submit Score'}
-        </button>
+          {match.result ? 'Update Score' : 'Submit Score'}
+        </Button>
         {onCancel && (
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50"
           >
             Cancel
-          </button>
+          </Button>
         )}
       </div>
     </form>

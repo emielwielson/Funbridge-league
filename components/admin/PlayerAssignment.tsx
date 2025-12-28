@@ -8,6 +8,10 @@ import { getActiveLeague, getDraftLeague } from '@/lib/api/leagues';
 import type { UserWithDivision } from '@/lib/types/user';
 import type { Division } from '@/lib/types/division';
 import type { League } from '@/lib/types/league';
+import Alert from '@/components/ui/Alert';
+import Select from '@/components/ui/Select';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Skeleton from '@/components/ui/Skeleton';
 
 interface PlayerAssignmentProps {
   onAssignmentChange?: () => void;
@@ -220,8 +224,18 @@ export default function PlayerAssignment({ onAssignmentChange }: PlayerAssignmen
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-gray-600">Loading...</div>
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white rounded-lg shadow border border-gray-200">
+            <div className="px-6 py-4">
+              <Skeleton height={24} className="mb-2" />
+            </div>
+            <div className="border-t border-gray-200 px-6 py-4">
+              <Skeleton height={20} className="mb-2" />
+              <Skeleton height={20} />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -231,19 +245,19 @@ export default function PlayerAssignment({ onAssignmentChange }: PlayerAssignmen
   return (
     <div className="space-y-4">
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <Alert variant="error" dismissible onDismiss={() => setError(null)}>
           {error}
-        </div>
+        </Alert>
       )}
 
       {!currentLeague ? (
-        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+        <Alert variant="warning">
           No league found. Create a league to assign players to divisions.
-        </div>
+        </Alert>
       ) : !canAssign ? (
-        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+        <Alert variant="warning">
           League is {currentLeague.status}. Players can only be assigned when the league is in draft status.
-        </div>
+        </Alert>
       ) : (
         <div className="space-y-2">
           {/* Divisions List */}
@@ -255,8 +269,9 @@ export default function PlayerAssignment({ onAssignmentChange }: PlayerAssignmen
               <div key={division.id} className="bg-white rounded-lg shadow border border-gray-200">
                 <button
                   onClick={() => toggleDivision(division.id)}
-                  className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px]"
                   disabled={!canAssign}
+                  aria-expanded={isExpanded}
                 >
                   <div className="flex items-center space-x-3">
                     <svg
@@ -286,25 +301,30 @@ export default function PlayerAssignment({ onAssignmentChange }: PlayerAssignmen
                             className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
                           >
                             <span className="text-sm font-medium text-gray-900">{user.name}</span>
-                            <select
-                              value={user.division_id || 'no-division'}
-                              onChange={(e) => {
-                                const newDivisionId = e.target.value === 'no-division' ? null : e.target.value;
-                                handleDivisionChange(user.id, newDivisionId);
-                              }}
-                              disabled={updatingPlayers.has(user.id) || !canAssign}
-                              className="ml-4 px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <option value="no-division">No Division</option>
-                              {divisions.map((div) => (
-                                <option key={div.id} value={div.id}>
-                                  {div.name}
-                                </option>
-                              ))}
-                            </select>
-                            {updatingPlayers.has(user.id) && (
-                              <span className="ml-2 text-xs text-gray-500">Updating...</span>
-                            )}
+                            <div className="ml-4 min-w-[150px]">
+                              <Select
+                                options={[
+                                  { value: 'no-division', label: 'No Division' },
+                                  ...divisions.map((div) => ({
+                                    value: div.id,
+                                    label: div.name,
+                                  })),
+                                ]}
+                                value={user.division_id || 'no-division'}
+                                onChange={(value) => {
+                                  const newDivisionId = value === 'no-division' ? null : value;
+                                  handleDivisionChange(user.id, newDivisionId);
+                                }}
+                                disabled={updatingPlayers.has(user.id) || !canAssign}
+                                className="text-sm"
+                              />
+                              {updatingPlayers.has(user.id) && (
+                                <div className="mt-1 flex items-center">
+                                  <LoadingSpinner size="sm" aria-label="Updating" />
+                                  <span className="ml-2 text-xs text-gray-500">Updating...</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -315,69 +335,76 @@ export default function PlayerAssignment({ onAssignmentChange }: PlayerAssignmen
             );
           })}
 
-          {/* No Division Section */}
-          <div className="bg-white rounded-lg shadow border border-gray-200">
-            <button
-              onClick={() => toggleDivision('no-division')}
-              className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-              disabled={!canAssign}
-            >
-              <div className="flex items-center space-x-3">
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${expandedDivisions.has('no-division') ? 'rotate-90' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                <span className="text-lg font-medium text-gray-900">No Division</span>
-                <span className="text-sm text-gray-500">
-                  ({noDivisionUsers.length} {noDivisionUsers.length === 1 ? 'player' : 'players'})
-                </span>
-              </div>
-            </button>
+            {/* No Division Section */}
+            <div className="bg-white rounded-lg shadow border border-gray-200">
+              <button
+                onClick={() => toggleDivision('no-division')}
+                className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px]"
+                disabled={!canAssign}
+                aria-expanded={expandedDivisions.has('no-division')}
+              >
+                <div className="flex items-center space-x-3">
+                  <svg
+                    className={`w-5 h-5 text-gray-500 transition-transform ${expandedDivisions.has('no-division') ? 'rotate-90' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span className="text-lg font-medium text-gray-900">No Division</span>
+                  <span className="text-sm text-gray-500">
+                    ({noDivisionUsers.length} {noDivisionUsers.length === 1 ? 'player' : 'players'})
+                  </span>
+                </div>
+              </button>
 
-            {expandedDivisions.has('no-division') && (
-              <div className="border-t border-gray-200 px-6 py-4">
-                {noDivisionUsers.length === 0 ? (
-                  <p className="text-sm text-gray-500 italic">All players are assigned to divisions</p>
-                ) : (
-                  <div className="space-y-3">
-                    {noDivisionUsers.map((user) => (
-                      <div
-                        key={user.id}
-                        className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
-                      >
-                        <span className="text-sm font-medium text-gray-900">{user.name}</span>
-                        <select
-                          value="no-division"
-                          onChange={(e) => {
-                            const newDivisionId = e.target.value === 'no-division' ? null : e.target.value;
-                            handleDivisionChange(user.id, newDivisionId);
-                          }}
-                          disabled={updatingPlayers.has(user.id) || !canAssign}
-                          className="ml-4 px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              {expandedDivisions.has('no-division') && (
+                <div className="border-t border-gray-200 px-6 py-4">
+                  {noDivisionUsers.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic">No players without a division</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {noDivisionUsers.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
                         >
-                          <option value="no-division">No Division</option>
-                          {divisions.map((div) => (
-                            <option key={div.id} value={div.id}>
-                              {div.name}
-                            </option>
-                          ))}
-                        </select>
-                        {updatingPlayers.has(user.id) && (
-                          <span className="ml-2 text-xs text-gray-500">Updating...</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                          <span className="text-sm font-medium text-gray-900">{user.name}</span>
+                          <div className="ml-4 min-w-[150px]">
+                            <Select
+                              options={[
+                                { value: 'no-division', label: 'No Division' },
+                                ...divisions.map((div) => ({
+                                  value: div.id,
+                                  label: div.name,
+                                })),
+                              ]}
+                              value={user.division_id || 'no-division'}
+                              onChange={(value) => {
+                                const newDivisionId = value === 'no-division' ? null : value;
+                                handleDivisionChange(user.id, newDivisionId);
+                              }}
+                              disabled={updatingPlayers.has(user.id) || !canAssign}
+                              className="text-sm"
+                            />
+                            {updatingPlayers.has(user.id) && (
+                              <div className="mt-1 flex items-center">
+                                <LoadingSpinner size="sm" aria-label="Updating" />
+                                <span className="ml-2 text-xs text-gray-500">Updating...</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

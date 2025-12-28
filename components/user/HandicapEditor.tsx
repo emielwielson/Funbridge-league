@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { updateHandicap } from '@/lib/api/users';
 import type { User } from '@/lib/types/user';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 
 interface HandicapEditorProps {
   user: User;
@@ -48,31 +50,34 @@ export default function HandicapEditor({ user, onUpdate }: HandicapEditorProps) 
   if (isEditing) {
     return (
       <div className="flex items-center space-x-2">
-        <input
+        <Input
           type="number"
           value={handicap}
           onChange={(e) => {
             setHandicap(e.target.value);
             setError(null);
           }}
-          className="w-20 px-2 py-1 border border-gray-300 rounded text-gray-900 bg-white"
+          className="w-20"
+          error={error || undefined}
           disabled={loading}
         />
-        <button
+        <Button
+          size="sm"
+          variant="primary"
           onClick={handleSave}
+          loading={loading}
           disabled={loading}
-          className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
         >
-          {loading ? '...' : 'Save'}
-        </button>
-        <button
+          Save
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
           onClick={handleCancel}
           disabled={loading}
-          className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300 disabled:opacity-50"
         >
           Cancel
-        </button>
-        {error && <span className="text-xs text-red-600">{error}</span>}
+        </Button>
       </div>
     );
   }
@@ -80,12 +85,13 @@ export default function HandicapEditor({ user, onUpdate }: HandicapEditorProps) 
   return (
     <div className="flex items-center space-x-2">
       <span className="text-gray-900">{user.handicap}</span>
-      <button
+      <Button
+        size="sm"
+        variant="secondary"
         onClick={() => setIsEditing(true)}
-        className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded hover:bg-gray-200"
       >
         Edit
-      </button>
+      </Button>
     </div>
   );
 }

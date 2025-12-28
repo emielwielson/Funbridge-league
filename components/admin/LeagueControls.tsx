@@ -9,6 +9,10 @@ import {
   finishLeague,
 } from '@/lib/api/leagues';
 import type { League } from '@/lib/types/league';
+import Alert from '@/components/ui/Alert';
+import Button from '@/components/ui/Button';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Skeleton from '@/components/ui/Skeleton';
 
 interface LeagueControlsProps {
   onLeagueChange?: () => void;
@@ -140,8 +144,13 @@ export default function LeagueControls({ onLeagueChange }: LeagueControlsProps) 
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-gray-600">Loading league status...</div>
+      <div className="bg-white rounded-lg shadow p-6">
+        <Skeleton height={24} className="mb-4" />
+        <div className="space-y-4">
+          <Skeleton height={20} />
+          <Skeleton height={20} />
+          <Skeleton height={44} width={200} />
+        </div>
       </div>
     );
   }
@@ -149,9 +158,9 @@ export default function LeagueControls({ onLeagueChange }: LeagueControlsProps) 
   return (
     <div className="space-y-6">
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <Alert variant="error" dismissible onDismiss={() => setError(null)}>
           {error}
-        </div>
+        </Alert>
       )}
 
       <div className="bg-white rounded-lg shadow p-6">
@@ -169,13 +178,14 @@ export default function LeagueControls({ onLeagueChange }: LeagueControlsProps) 
                 {new Date(activeLeague.created_at).toLocaleString()}
               </p>
             </div>
-            <button
+            <Button
+              variant="danger"
               onClick={handleFinishLeague}
+              loading={actionLoading === 'finish'}
               disabled={actionLoading === 'finish'}
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
             >
-              {actionLoading === 'finish' ? 'Finishing...' : 'Finish League'}
-            </button>
+              Finish League
+            </Button>
           </div>
         ) : draftLeague ? (
           <div className="space-y-4">
@@ -189,24 +199,27 @@ export default function LeagueControls({ onLeagueChange }: LeagueControlsProps) 
                 {new Date(draftLeague.created_at).toLocaleString()}
               </p>
             </div>
-            <button
+            <Button
+              variant="primary"
               onClick={handleStartLeague}
+              loading={actionLoading === 'start'}
               disabled={actionLoading === 'start'}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+              className="bg-green-600 hover:bg-green-700 focus:ring-green-500"
             >
-              {actionLoading === 'start' ? 'Starting...' : 'Start League'}
-            </button>
+              Start League
+            </Button>
           </div>
         ) : (
           <div className="space-y-4">
             <p className="text-gray-600">No league exists. Create a new draft league to get started.</p>
-            <button
+            <Button
+              variant="primary"
               onClick={handleCreateLeague}
+              loading={actionLoading === 'create'}
               disabled={actionLoading === 'create'}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {actionLoading === 'create' ? 'Creating...' : 'Create New League'}
-            </button>
+              Create New League
+            </Button>
           </div>
         )}
       </div>

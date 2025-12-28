@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { getArchivedLeagues } from '@/lib/api/leagues';
 import type { League } from '@/lib/types/league';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Skeleton from '@/components/ui/Skeleton';
+import Alert from '@/components/ui/Alert';
 
 export default function OldLeaguesList() {
   const [leagues, setLeagues] = useState<League[]>([]);
@@ -31,17 +34,28 @@ export default function OldLeaguesList() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-gray-600">Loading archived leagues...</div>
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <Skeleton height={24} className="mb-2" />
+          <Skeleton height={16} width="60%" />
+        </div>
+        <div className="divide-y divide-gray-200">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="px-6 py-4">
+              <Skeleton height={20} className="mb-2" />
+              <Skeleton height={14} width="80%" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+      <Alert variant="error" dismissible>
         {error}
-      </div>
+      </Alert>
     );
   }
 

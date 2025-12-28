@@ -50,3 +50,60 @@ textarea {
   }
 }
 
+/* Focus states for accessibility - ensure all interactive elements have visible focus */
+*:focus-visible {
+  outline: 2px solid theme('colors.blue.500');
+  outline-offset: 2px;
+}
+
+/* Enhanced focus states for buttons and links */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid theme('colors.blue.500');
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Ensure minimum touch target size for mobile */
+button,
+a,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Mobile-friendly font sizing */
+@media (max-width: 640px) {
+  html {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  body {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+}
+
+/* Smooth transitions for interactive elements */
+button,
+a,
+input,
+select,
+textarea {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Utility classes for mobile spacing */
+@layer utilities {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .mobile-padding {
+    @apply px-4 py-3;
+  }
+}
+

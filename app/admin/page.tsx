@@ -8,6 +8,10 @@ import { getActiveLeague, getDraftLeague } from '@/lib/api/leagues';
 import type { UserWithDivision } from '@/lib/types/user';
 import type { Division } from '@/lib/types/division';
 import type { League } from '@/lib/types/league';
+import Button from '@/components/ui/Button';
+import Alert from '@/components/ui/Alert';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Skeleton from '@/components/ui/Skeleton';
 
 export default function AdminDashboardPage() {
   const [users, setUsers] = useState<UserWithDivision[]>([]);
@@ -59,17 +63,36 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-gray-600">Loading dashboard...</div>
+      <div className="space-y-6">
+        <div>
+          <Skeleton height={32} className="mb-2" />
+          <Skeleton height={16} width="60%" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white rounded-lg shadow p-6">
+              <Skeleton height={16} className="mb-2" />
+              <Skeleton height={32} />
+            </div>
+          ))}
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <Skeleton height={24} className="mb-4" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} height={44} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+      <Alert variant="error" dismissible onDismiss={() => {}}>
         {error}
-      </div>
+      </Alert>
     );
   }
 
@@ -120,30 +143,42 @@ export default function AdminDashboardPage() {
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link
-            href="/admin/users"
-            className="px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-center font-medium"
-          >
-            Manage Players
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link href="/admin/users" className="w-full">
+            <Button
+              variant="primary"
+              fullWidth
+              className="bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
+            >
+              Manage Players
+            </Button>
           </Link>
-          <Link
-            href="/admin/divisions"
-            className="px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 text-center font-medium"
-          >
-            Manage Divisions
+          <Link href="/admin/divisions" className="w-full">
+            <Button
+              variant="primary"
+              fullWidth
+              className="bg-green-600 hover:bg-green-700 focus:ring-green-500"
+            >
+              Manage Divisions
+            </Button>
           </Link>
-          <Link
-            href="/admin/league"
-            className="px-4 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-center font-medium"
-          >
-            League Settings
+          <Link href="/admin/league" className="w-full">
+            <Button
+              variant="primary"
+              fullWidth
+              className="bg-purple-600 hover:bg-purple-700 focus:ring-purple-500"
+            >
+              League Settings
+            </Button>
           </Link>
-          <Link
-            href="/admin/old-leagues"
-            className="px-4 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-center font-medium"
-          >
-            View Old Leagues
+          <Link href="/admin/old-leagues" className="w-full">
+            <Button
+              variant="primary"
+              fullWidth
+              className="bg-gray-600 hover:bg-gray-700 focus:ring-gray-500"
+            >
+              View Old Leagues
+            </Button>
           </Link>
         </div>
       </div>

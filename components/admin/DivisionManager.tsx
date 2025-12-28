@@ -5,6 +5,11 @@ import { getAllDivisions, createDivision, deleteDivision, updateDivision } from 
 import { getActiveLeague, getDraftLeague } from '@/lib/api/leagues';
 import type { Division } from '@/lib/types/division';
 import type { League } from '@/lib/types/league';
+import Alert from '@/components/ui/Alert';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Skeleton from '@/components/ui/Skeleton';
 
 interface DivisionManagerProps {
   onDivisionCreated?: () => void;
@@ -166,19 +171,44 @@ export default function DivisionManager({ onDivisionCreated, onDivisionDeleted, 
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-gray-600">Loading divisions...</div>
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <Skeleton height={24} className="mb-4" />
+          <div className="flex gap-4">
+            <Skeleton height={44} className="flex-1" />
+            <Skeleton height={44} width={100} />
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <Skeleton height={24} />
+          </div>
+          <div className="divide-y divide-gray-200">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="px-6 py-4">
+                <Skeleton height={20} className="mb-2" />
+                <Skeleton height={14} width="40%" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {error && (
+        <Alert variant="error" dismissible onDismiss={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
       {/* Create Division Form */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Division</h3>
         <form onSubmit={handleCreate} className="flex gap-4">
-          <input
+          <Input
             type="text"
             value={newDivisionName}
             onChange={(e) => {
@@ -186,20 +216,18 @@ export default function DivisionManager({ onDivisionCreated, onDivisionDeleted, 
               setError(null);
             }}
             placeholder="Division name"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            fullWidth
             disabled={creating}
           />
-          <button
+          <Button
             type="submit"
+            variant="primary"
+            loading={creating}
             disabled={creating || !newDivisionName.trim()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {creating ? 'Creating...' : 'Create'}
-          </button>
+            Create
+          </Button>
         </form>
-        {error && (
-          <p className="mt-2 text-sm text-red-600">{error}</p>
-        )}
       </div>
 
       {/* Divisions List */}
@@ -223,31 +251,34 @@ export default function DivisionManager({ onDivisionCreated, onDivisionDeleted, 
                     <div className="flex-1">
                       {isEditing ? (
                         <div className="flex items-center space-x-2">
-                          <input
+                          <Input
                             type="text"
                             value={editingDivisionName}
                             onChange={(e) => {
                               setEditingDivisionName(e.target.value);
                               setError(null);
                             }}
-                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="flex-1"
                             disabled={isUpdating}
                             autoFocus
                           />
-                          <button
+                          <Button
+                            size="sm"
+                            variant="primary"
                             onClick={() => handleSaveEdit(division.id)}
+                            loading={isUpdating}
                             disabled={isUpdating || !editingDivisionName.trim()}
-                            className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {isUpdating ? 'Saving...' : 'Save'}
-                          </button>
-                          <button
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
                             onClick={handleCancelEdit}
                             disabled={isUpdating}
-                            className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50"
                           >
                             Cancel
-                          </button>
+                          </Button>
                         </div>
                       ) : (
                         <div>
@@ -266,10 +297,11 @@ export default function DivisionManager({ onDivisionCreated, onDivisionDeleted, 
                     </div>
                     {!isEditing && (
                       <div className="flex items-center space-x-2">
-                        <button
+                        <Button
+                          size="sm"
+                          variant="secondary"
                           onClick={() => handleStartEdit(division)}
                           disabled={currentLeague?.status === 'active'}
-                          className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                           title={
                             currentLeague?.status === 'active'
                               ? 'Cannot edit division while league is active'
@@ -277,19 +309,21 @@ export default function DivisionManager({ onDivisionCreated, onDivisionDeleted, 
                           }
                         >
                           Edit
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
                           onClick={() => handleDelete(division.id, division.name)}
+                          loading={deletingDivisionId === division.id}
                           disabled={deletingDivisionId === division.id || currentLeague?.status === 'active'}
-                          className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           title={
                             currentLeague?.status === 'active'
                               ? 'Cannot delete division while league is active'
                               : 'Delete division (players will be moved to "No Division")'
                           }
                         >
-                          {deletingDivisionId === division.id ? 'Deleting...' : 'Delete'}
-                        </button>
+                          Delete
+                        </Button>
                       </div>
                     )}
                   </div>
