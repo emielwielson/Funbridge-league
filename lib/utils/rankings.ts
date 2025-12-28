@@ -5,7 +5,7 @@
 
 import type { MatchWithResult } from '@/lib/types/match';
 import type { PlayerRanking } from '@/lib/types/rankings';
-import { calculateMatchOutcome, calculateMatchPoints } from './match-calculations';
+import { calculateMatchOutcome, calculateVP } from './match-calculations';
 
 /**
  * Calculate statistics for a single player based on their matches
@@ -19,7 +19,7 @@ export function calculatePlayerStats(
   wins: number;
   ties: number;
   losses: number;
-  matchPoints: number;
+  totalVP: number;
   finalScoreDifference: number;
 } {
   // Filter to matches where player is involved and has results
@@ -32,7 +32,7 @@ export function calculatePlayerStats(
   let wins = 0;
   let ties = 0;
   let losses = 0;
-  let matchPoints = 0;
+  let totalVP = 0;
   let finalScoreDifference = 0; // Sum of (your final score - opponent's final score) for each match
 
   for (const match of playerMatches) {
@@ -56,10 +56,16 @@ export function calculatePlayerStats(
     const playerAFinalScore = playerAImp + playerAHandicap;
     const playerBFinalScore = playerBImp + playerBHandicap;
 
-    // Determine player's match points
+    // Calculate VP for this player
     const player = isPlayerA ? 'a' : 'b';
-    const points = calculateMatchPoints(outcome, player);
-    matchPoints += points;
+    const vp = calculateVP(
+      playerAImp,
+      playerAHandicap,
+      playerBImp,
+      playerBHandicap,
+      player
+    );
+    totalVP += vp;
 
     // Calculate score difference for this match: (your final score) - (opponent's final score)
     const matchScoreDifference = isPlayerA
@@ -85,7 +91,7 @@ export function calculatePlayerStats(
     wins,
     ties,
     losses,
-    matchPoints,
+    totalVP,
     finalScoreDifference,
   };
 }
@@ -108,7 +114,7 @@ export function calculateRankingsForDivision(
       wins: stats.wins,
       ties: stats.ties,
       losses: stats.losses,
-      matchPoints: stats.matchPoints,
+      totalVP: stats.totalVP,
       finalScoreDifference: stats.finalScoreDifference,
     };
   });
@@ -116,18 +122,21 @@ export function calculateRankingsForDivision(
 
 /**
  * Sort rankings and assign rank numbers
- * Sorts by match points (descending), then by final score difference (descending)
+ * Sorts by total VP (descending), then by wins (descending), then by matches played (ascending)
  * Handles tied ranks appropriately
  */
 export function sortRankings(
   rankings: Omit<PlayerRanking, 'rank'>[]
 ): PlayerRanking[] {
-  // Sort by match points descending, then by final score difference descending
+  // Sort by total VP descending, then by wins descending, then by matches played ascending
   const sorted = [...rankings].sort((a, b) => {
-    if (b.matchPoints !== a.matchPoints) {
-      return b.matchPoints - a.matchPoints;
+    if (b.totalVP !== a.totalVP) {
+      return b.totalVP - a.totalVP;
     }
-    return b.finalScoreDifference - a.finalScoreDifference;
+    if (b.wins !== a.wins) {
+      return b.wins - a.wins;
+    }
+    return a.matchesPlayed - b.matchesPlayed;
   });
 
   // Assign ranks
@@ -140,8 +149,9 @@ export function sortRankings(
     // If this is not the first player and has different stats than previous, update rank
     if (
       i > 0 &&
-      (ranking.matchPoints !== sorted[i - 1].matchPoints ||
-        ranking.finalScoreDifference !== sorted[i - 1].finalScoreDifference)
+      (ranking.totalVP !== sorted[i - 1].totalVP ||
+        ranking.wins !== sorted[i - 1].wins ||
+        ranking.matchesPlayed !== sorted[i - 1].matchesPlayed)
     ) {
       currentRank = i + 1;
     }

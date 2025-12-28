@@ -19,7 +19,7 @@ export default function RankingsTable({ rankings, loading }: RankingsTableProps)
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  {[1, 2, 3, 4, 5, 6, 7].map((i) => (
                     <th key={i} className="px-6 py-3">
                       <Skeleton height={20} />
                     </th>
@@ -29,7 +29,7 @@ export default function RankingsTable({ rankings, loading }: RankingsTableProps)
               <tbody className="divide-y divide-gray-200">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <tr key={i}>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((j) => (
+                    {[1, 2, 3, 4, 5, 6, 7].map((j) => (
                       <td key={j} className="px-6 py-4">
                         <Skeleton height={16} />
                       </td>
@@ -66,15 +66,6 @@ export default function RankingsTable({ rankings, loading }: RankingsTableProps)
     );
   }
 
-  const formatScoreDifference = (difference: number): string => {
-    if (difference > 0) {
-      return `+${difference}`;
-    } else if (difference < 0) {
-      return `${difference}`;
-    }
-    return '0';
-  };
-
   return (
     <div className="space-y-4">
       {/* Desktop Table View */}
@@ -101,10 +92,7 @@ export default function RankingsTable({ rankings, loading }: RankingsTableProps)
                 Ties
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Points
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Score Diff
+                VP
               </th>
             </tr>
           </thead>
@@ -130,10 +118,7 @@ export default function RankingsTable({ rankings, loading }: RankingsTableProps)
                   {ranking.ties}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {ranking.matchPoints}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatScoreDifference(ranking.finalScoreDifference)}
+                  {ranking.totalVP.toFixed(2)}
                 </td>
               </tr>
             ))}
@@ -158,7 +143,7 @@ export default function RankingsTable({ rankings, loading }: RankingsTableProps)
                 </span>
               </div>
               <span className="text-sm text-gray-500">
-                {ranking.matchPoints} pts
+                {ranking.totalVP.toFixed(2)} VP
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
@@ -177,12 +162,6 @@ export default function RankingsTable({ rankings, loading }: RankingsTableProps)
               <div>
                 <span className="text-gray-500">Ties:</span>{' '}
                 <span className="text-gray-900">{ranking.ties}</span>
-              </div>
-              <div className="col-span-2">
-                <span className="text-gray-500">Score Difference:</span>{' '}
-                <span className="text-gray-900">
-                  {formatScoreDifference(ranking.finalScoreDifference)}
-                </span>
               </div>
             </div>
           </div>

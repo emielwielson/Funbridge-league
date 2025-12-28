@@ -3,7 +3,7 @@
 import type { MatchWithResult } from '@/lib/types/match';
 import {
   calculateMatchOutcome,
-  calculateMatchPoints,
+  calculateVP,
   calculateFinalScore,
 } from '@/lib/utils/match-calculations';
 
@@ -38,8 +38,20 @@ export default function MatchResultDisplay({
     playerBHandicap
   );
 
-  const playerAPoints = calculateMatchPoints(outcome, 'a');
-  const playerBPoints = calculateMatchPoints(outcome, 'b');
+  const playerAVP = calculateVP(
+    match.result.player_a_imp_score,
+    playerAHandicap,
+    match.result.player_b_imp_score,
+    playerBHandicap,
+    'a'
+  );
+  const playerBVP = calculateVP(
+    match.result.player_a_imp_score,
+    playerAHandicap,
+    match.result.player_b_imp_score,
+    playerBHandicap,
+    'b'
+  );
 
   const getOutcomeText = (): string => {
     const playerAName = match.player_a_name || 'Player A';
@@ -78,7 +90,7 @@ export default function MatchResultDisplay({
             {match.result.player_a_imp_score} + {playerAHandicap} ={' '}
             <strong>{playerAFinalScore}</strong>
           </span>
-          <span className="text-gray-600">({playerAPoints} pts)</span>
+          <span className="text-gray-600">({playerAVP.toFixed(2)} VP)</span>
         </div>
         <div
           className={`flex justify-between items-center p-2 rounded ${
@@ -95,7 +107,7 @@ export default function MatchResultDisplay({
             {match.result.player_b_imp_score} + {playerBHandicap} ={' '}
             <strong>{playerBFinalScore}</strong>
           </span>
-          <span className="text-gray-600">({playerBPoints} pts)</span>
+          <span className="text-gray-600">({playerBVP.toFixed(2)} VP)</span>
         </div>
       </div>
       <div className="text-center pt-1">

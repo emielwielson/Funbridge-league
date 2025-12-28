@@ -80,18 +80,17 @@ describe('calculatePlayerStats', () => {
     const stats = calculatePlayerStats(matches, 'player1', 5);
 
     // Player 1:
-    // Match 1: wins (10+5 = 15 vs 5+0 = 5) -> +1 point, +10 difference
-    // Match 2: loses (5+5 = 10 vs 10+3 = 13) -> +0 points, -3 difference
-    // Match 3: ties (10+5 = 15 vs 10+0 = 10) -> +0.5 points, +5 difference
-    // Total: 1.5 points, 12 difference (15-3+5 = 17? Let me recalculate)
-    // Actually: won = 15 + 13 + 15 = 43, lost = 5 + 10 + 10 = 25, diff = 18
+    // Match 1: wins (10+5 = 15 vs 5+0 = 5), IMP diff = 10 -> 14.58 VP
+    // Match 2: loses (5+5 = 10 vs 10+3 = 13), IMP diff = -3 -> 8.41 VP
+    // Match 3: wins (10+5 = 15 vs 10+0 = 10), IMP diff = 5 -> 12.53 VP
+    // Total: 14.58 + 8.41 + 12.53 = 35.52 VP
     expect(stats.matchesPlayed).toBe(3);
-    expect(stats.wins).toBe(1);
+    expect(stats.wins).toBe(2);
     expect(stats.losses).toBe(1);
-    expect(stats.ties).toBe(1);
-    expect(stats.matchPoints).toBe(1.5);
-    // Final score difference: (15 + 13 + 15) - (5 + 10 + 10) = 43 - 25 = 18
-    expect(stats.finalScoreDifference).toBe(18);
+    expect(stats.ties).toBe(0);
+    expect(stats.totalVP).toBeCloseTo(35.52, 2);
+    // Final score difference: (15 + 10 + 15) - (5 + 13 + 10) = 40 - 28 = 12
+    expect(stats.finalScoreDifference).toBe(12);
   });
 
   it('should return zeros for a player with no matches', () => {
@@ -102,7 +101,7 @@ describe('calculatePlayerStats', () => {
     expect(stats.wins).toBe(0);
     expect(stats.losses).toBe(0);
     expect(stats.ties).toBe(0);
-    expect(stats.matchPoints).toBe(0);
+    expect(stats.totalVP).toBe(0);
     expect(stats.finalScoreDifference).toBe(0);
   });
 
@@ -148,7 +147,8 @@ describe('calculatePlayerStats', () => {
 
     expect(stats.matchesPlayed).toBe(1);
     expect(stats.wins).toBe(1);
-    expect(stats.matchPoints).toBe(1);
+    // Match: wins (10+5 = 15 vs 5+0 = 5), IMP diff = 10 -> 14.58 VP
+    expect(stats.totalVP).toBeCloseTo(14.58, 2);
   });
 
   it('should handle player as player B correctly', () => {
@@ -178,10 +178,10 @@ describe('calculatePlayerStats', () => {
 
     const stats = calculatePlayerStats(matches, 'player1', 5);
 
-    // Player 1 is player B, wins (10+5 = 15 vs 5+0 = 5)
+    // Player 1 is player B, wins (10+5 = 15 vs 5+0 = 5), IMP diff = 10 -> 14.58 VP
     expect(stats.matchesPlayed).toBe(1);
     expect(stats.wins).toBe(1);
-    expect(stats.matchPoints).toBe(1);
+    expect(stats.totalVP).toBeCloseTo(14.58, 2);
     expect(stats.finalScoreDifference).toBe(10); // 15 - 5
   });
 });
@@ -244,7 +244,7 @@ describe('calculateRankingsForDivision', () => {
 });
 
 describe('sortRankings', () => {
-  it('should sort by match points descending', () => {
+  it('should sort by total VP descending', () => {
     const rankings = [
       {
         playerId: 'player1',
@@ -254,7 +254,7 @@ describe('sortRankings', () => {
         wins: 1,
         ties: 0,
         losses: 1,
-        matchPoints: 1,
+        totalVP: 25.0,
         finalScoreDifference: 10,
       },
       {
@@ -265,7 +265,7 @@ describe('sortRankings', () => {
         wins: 2,
         ties: 0,
         losses: 0,
-        matchPoints: 2,
+        totalVP: 30.0,
         finalScoreDifference: 5,
       },
     ];
@@ -278,7 +278,7 @@ describe('sortRankings', () => {
     expect(sorted[1].rank).toBe(2);
   });
 
-  it('should use final score difference as tiebreaker', () => {
+  it('should use wins as tiebreaker when VP is equal', () => {
     const rankings = [
       {
         playerId: 'player1',
@@ -288,7 +288,7 @@ describe('sortRankings', () => {
         wins: 1,
         ties: 0,
         losses: 1,
-        matchPoints: 1,
+        totalVP: 25.0,
         finalScoreDifference: 5,
       },
       {
@@ -296,10 +296,10 @@ describe('sortRankings', () => {
         playerName: 'Player 2',
         handicap: 0,
         matchesPlayed: 2,
-        wins: 1,
+        wins: 2,
         ties: 0,
-        losses: 1,
-        matchPoints: 1,
+        losses: 0,
+        totalVP: 25.0,
         finalScoreDifference: 10,
       },
     ];
@@ -312,7 +312,41 @@ describe('sortRankings', () => {
     expect(sorted[1].rank).toBe(2);
   });
 
-  it('should assign same rank to players with identical stats', () => {
+  it('should use matches played (ascending) as tiebreaker when VP and wins are equal', () => {
+    const rankings = [
+      {
+        playerId: 'player1',
+        playerName: 'Player 1',
+        handicap: 5,
+        matchesPlayed: 3,
+        wins: 1,
+        ties: 0,
+        losses: 2,
+        totalVP: 25.0,
+        finalScoreDifference: 5,
+      },
+      {
+        playerId: 'player2',
+        playerName: 'Player 2',
+        handicap: 0,
+        matchesPlayed: 2,
+        wins: 1,
+        ties: 0,
+        losses: 1,
+        totalVP: 25.0,
+        finalScoreDifference: 10,
+      },
+    ];
+
+    const sorted = sortRankings(rankings);
+
+    expect(sorted[0].playerId).toBe('player2'); // Fewer matches played = higher rank
+    expect(sorted[0].rank).toBe(1);
+    expect(sorted[1].playerId).toBe('player1');
+    expect(sorted[1].rank).toBe(2);
+  });
+
+  it('should assign same rank to players with identical VP, wins, and matches played', () => {
     const rankings = [
       {
         playerId: 'player1',
@@ -322,7 +356,7 @@ describe('sortRankings', () => {
         wins: 1,
         ties: 0,
         losses: 1,
-        matchPoints: 1,
+        totalVP: 25.0,
         finalScoreDifference: 10,
       },
       {
@@ -333,8 +367,8 @@ describe('sortRankings', () => {
         wins: 1,
         ties: 0,
         losses: 1,
-        matchPoints: 1,
-        finalScoreDifference: 10,
+        totalVP: 25.0,
+        finalScoreDifference: 5, // Different score difference, but same VP, wins, matches
       },
       {
         playerId: 'player3',
@@ -344,7 +378,7 @@ describe('sortRankings', () => {
         wins: 0,
         ties: 0,
         losses: 2,
-        matchPoints: 0,
+        totalVP: 15.0,
         finalScoreDifference: -5,
       },
     ];
@@ -352,7 +386,7 @@ describe('sortRankings', () => {
     const sorted = sortRankings(rankings);
 
     expect(sorted[0].rank).toBe(1);
-    expect(sorted[1].rank).toBe(1); // Same rank
+    expect(sorted[1].rank).toBe(1); // Same rank (same VP, wins, matches played)
     expect(sorted[2].rank).toBe(3); // Next rank skipped
   });
 

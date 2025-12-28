@@ -5,6 +5,7 @@
 import {
   calculateMatchOutcome,
   calculateMatchPoints,
+  calculateVP,
   calculateFinalScore,
   calculateScoreDifference,
 } from './match-calculations';
@@ -83,6 +84,72 @@ describe('Match Calculations', () => {
       expect(calculateMatchPoints('player_b_wins', 'b')).toBe(1);
       expect(calculateMatchPoints('tie', 'a')).toBe(0.5);
       expect(calculateMatchPoints('tie', 'b')).toBe(0.5);
+    });
+  });
+
+  describe('calculateVP', () => {
+    it('should return 10.0 VP for both players in a tie', () => {
+      const vpA = calculateVP(10, 5, 10, 5, 'a');
+      const vpB = calculateVP(10, 5, 10, 5, 'b');
+      
+      expect(vpA).toBe(10.0);
+      expect(vpB).toBe(10.0);
+    });
+
+    it('should return correct VP for IMP difference of 1', () => {
+      // Player A wins by 1 IMP
+      const vpA = calculateVP(10, 0, 9, 0, 'a');
+      const vpB = calculateVP(10, 0, 9, 0, 'b');
+      
+      expect(vpA).toBe(10.55);
+      expect(vpB).toBe(9.45);
+    });
+
+    it('should return correct VP for IMP difference of 10', () => {
+      // Player A wins by 10 IMP
+      const vpA = calculateVP(20, 0, 10, 0, 'a');
+      const vpB = calculateVP(20, 0, 10, 0, 'b');
+      
+      expect(vpA).toBe(14.58);
+      expect(vpB).toBe(5.42);
+    });
+
+    it('should return correct VP for IMP difference of 34 or more', () => {
+      // Player A wins by 50 IMP (should clamp to 34)
+      const vpA = calculateVP(50, 0, 0, 0, 'a');
+      const vpB = calculateVP(50, 0, 0, 0, 'b');
+      
+      expect(vpA).toBe(20.0);
+      expect(vpB).toBe(0.0);
+    });
+
+    it('should handle handicaps correctly', () => {
+      // Player A: 10 + 5 = 15, Player B: 5 + 0 = 5, diff = 10
+      const vpA = calculateVP(10, 5, 5, 0, 'a');
+      const vpB = calculateVP(10, 5, 5, 0, 'b');
+      
+      expect(vpA).toBe(14.58);
+      expect(vpB).toBe(5.42);
+    });
+
+    it('should handle player B winning', () => {
+      // Player B wins by 5 IMP
+      const vpA = calculateVP(5, 0, 10, 0, 'a');
+      const vpB = calculateVP(5, 0, 10, 0, 'b');
+      
+      expect(vpA).toBe(7.47);
+      expect(vpB).toBe(12.53);
+    });
+
+    it('should round IMP difference correctly', () => {
+      // Player A wins by 0.7 IMP (should round to 1)
+      const vpA = calculateVP(10.7, 0, 10, 0, 'a');
+      const vpB = calculateVP(10.7, 0, 10, 0, 'b');
+      
+      // Note: Since we're using final scores (IMP + handicap), and IMP scores are integers,
+      // this test might not be realistic, but it tests the rounding logic
+      expect(vpA).toBeGreaterThan(10.0);
+      expect(vpB).toBeLessThan(10.0);
     });
   });
 

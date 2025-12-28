@@ -11,7 +11,7 @@ export interface PlayerRanking {
   wins: number;
   ties: number;
   losses: number;
-  matchPoints: number;
+  totalVP: number; // Total Victory Points accumulated across all matches
   finalScoreDifference: number; // (IMP+handicap won) - (IMP+handicap lost)
 }
 
