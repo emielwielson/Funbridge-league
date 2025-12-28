@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Build query to fetch matches with player names, handicaps, and results
+    // Build query to fetch matches with player names, handicaps, funbridge usernames, and results
     let query = supabase
       .from('matches')
       .select(`
@@ -85,8 +85,8 @@ export async function GET(request: NextRequest) {
         player_a_id,
         player_b_id,
         created_at,
-        player_a:users!matches_player_a_id_fkey(name, handicap),
-        player_b:users!matches_player_b_id_fkey(name, handicap),
+        player_a:users!matches_player_a_id_fkey(name, handicap, funbridge_username),
+        player_b:users!matches_player_b_id_fkey(name, handicap, funbridge_username),
         match_results(*)
       `)
       .eq('league_id', leagueId);
@@ -125,6 +125,8 @@ export async function GET(request: NextRequest) {
       player_b_name: match.player_b?.name,
       player_a_handicap: match.player_a?.handicap ?? 0,
       player_b_handicap: match.player_b?.handicap ?? 0,
+      player_a_funbridge_username: match.player_a?.funbridge_username,
+      player_b_funbridge_username: match.player_b?.funbridge_username,
       result: (() => {
         // Handle different possible structures: array, single object, or null
         const results = match.match_results;

@@ -16,6 +16,8 @@ export interface Match {
   player_b_name?: string;
   player_a_handicap?: number;
   player_b_handicap?: number;
+  player_a_funbridge_username?: string;
+  player_b_funbridge_username?: string;
 }
 
 export interface MatchResult {

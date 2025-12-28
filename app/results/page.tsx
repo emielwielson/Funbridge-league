@@ -58,7 +58,7 @@ export default function ResultsPage() {
 
       setDivisions(divisionsResult.data || []);
 
-      // Fetch current user's division assignment
+      // Fetch current user's division assignment (non-critical - just for showing "Your Division" label)
       try {
         const response = await fetch(
           `/api/users/division?leagueId=${encodeURIComponent(leagueResult.data.id)}`,
@@ -71,11 +71,19 @@ export default function ResultsPage() {
         const divisionData = await response.json();
         if (divisionData.data?.division_id) {
           setUserDivisionId(divisionData.data.division_id);
+          // Pre-select user's division if they have one, otherwise select first division
           setSelectedDivisionId(divisionData.data.division_id);
+        } else if (divisionsResult.data && divisionsResult.data.length > 0) {
+          // If user is not in a division, select the first division by default
+          setSelectedDivisionId(divisionsResult.data[0].id);
         }
       } catch (err) {
         // Non-critical error, continue without division pre-selection
         console.error('Failed to fetch user division:', err);
+        // If we have divisions, select the first one by default
+        if (divisionsResult.data && divisionsResult.data.length > 0) {
+          setSelectedDivisionId(divisionsResult.data[0].id);
+        }
       }
 
       setLoading(false);
@@ -183,8 +191,23 @@ export default function ResultsPage() {
                 </div>
               )}
 
-              {/* Matches Section */}
+              {/* Rankings Section */}
               {selectedDivisionId && (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Rankings
+                    {divisions.find(d => d.id === selectedDivisionId) && (
+                      <span className="text-sm font-normal text-gray-500 ml-2">
+                        - {divisions.find(d => d.id === selectedDivisionId)?.name}
+                      </span>
+                    )}
+                  </h3>
+                  <RankingsTable rankings={rankings} loading={rankingsLoading} />
+                </div>
+              )}
+
+              {/* Matches Section - Only show if user is in the league (has a division assignment) or is an admin */}
+              {selectedDivisionId && (userDivisionId || user?.role === 'admin') && (
                 <div className="bg-white rounded-lg shadow p-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Matches</h3>
                   {loading ? (
@@ -249,14 +272,6 @@ export default function ResultsPage() {
                       }}
                     />
                   ) : null}
-                </div>
-              )}
-
-              {/* Rankings Section */}
-              {selectedDivisionId && (
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Rankings</h3>
-                  <RankingsTable rankings={rankings} loading={rankingsLoading} />
                 </div>
               )}
             </>

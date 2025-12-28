@@ -104,10 +104,15 @@ export default function ScoreEntryForm({
 
   const getOutcomeText = (): string => {
     if (!outcome) return '';
+    const playerAName = match.player_a_name || 'Player A';
+    const playerBName = match.player_b_name || 'Player B';
+    const playerAFunbridge = match.player_a_funbridge_username ? ` (${match.player_a_funbridge_username})` : '';
+    const playerBFunbridge = match.player_b_funbridge_username ? ` (${match.player_b_funbridge_username})` : '';
+    
     if (outcome === 'player_a_wins') {
-      return `${match.player_a_name || 'Player A'} wins`;
+      return `${playerAName}${playerAFunbridge} wins`;
     } else if (outcome === 'player_b_wins') {
-      return `${match.player_b_name || 'Player B'} wins`;
+      return `${playerBName}${playerBFunbridge} wins`;
     } else {
       return 'Tie';
     }
@@ -130,7 +135,7 @@ export default function ScoreEntryForm({
       <div className="space-y-3">
         <Input
           type="number"
-          label={`${match.player_a_name || 'Player A'} (Handicap: ${playerAHandicap})`}
+          label={`${match.player_a_name || 'Player A'}${match.player_a_funbridge_username ? ` (${match.player_a_funbridge_username})` : ''} (Handicap: ${playerAHandicap})`}
           value={playerAImp}
           onChange={(e) => {
             setPlayerAImp(e.target.value);
@@ -142,7 +147,7 @@ export default function ScoreEntryForm({
 
         <Input
           type="number"
-          label={`${match.player_b_name || 'Player B'} (Handicap: ${playerBHandicap})`}
+          label={`${match.player_b_name || 'Player B'}${match.player_b_funbridge_username ? ` (${match.player_b_funbridge_username})` : ''} (Handicap: ${playerBHandicap})`}
           value={playerBImp}
           onChange={(e) => {
             setPlayerBImp(e.target.value);

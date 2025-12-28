@@ -84,6 +84,9 @@ export default function MatchList({
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="font-medium text-gray-900">
                       {match.player_a_name || 'Unknown'}
+                      {match.player_a_funbridge_username && (
+                        <span className="text-gray-500 font-normal"> ({match.player_a_funbridge_username})</span>
+                      )}
                     </div>
                     <div className="text-gray-500 text-xs">
                       Handicap: {playerAHandicap}
@@ -92,6 +95,9 @@ export default function MatchList({
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="font-medium text-gray-900">
                       {match.player_b_name || 'Unknown'}
+                      {match.player_b_funbridge_username && (
+                        <span className="text-gray-500 font-normal"> ({match.player_b_funbridge_username})</span>
+                      )}
                     </div>
                     <div className="text-gray-500 text-xs">
                       Handicap: {playerBHandicap}
@@ -165,6 +171,9 @@ export default function MatchList({
                 <div>
                   <div className="font-medium text-gray-900">
                     {match.player_a_name || 'Unknown'}
+                    {match.player_a_funbridge_username && (
+                      <span className="text-gray-500 font-normal"> ({match.player_a_funbridge_username})</span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-500">
                     Handicap: {playerAHandicap}
@@ -174,6 +183,9 @@ export default function MatchList({
                 <div>
                   <div className="font-medium text-gray-900">
                     {match.player_b_name || 'Unknown'}
+                    {match.player_b_funbridge_username && (
+                      <span className="text-gray-500 font-normal"> ({match.player_b_funbridge_username})</span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-500">
                     Handicap: {playerBHandicap}

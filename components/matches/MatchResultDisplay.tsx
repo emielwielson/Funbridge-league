@@ -42,10 +42,15 @@ export default function MatchResultDisplay({
   const playerBPoints = calculateMatchPoints(outcome, 'b');
 
   const getOutcomeText = (): string => {
+    const playerAName = match.player_a_name || 'Player A';
+    const playerBName = match.player_b_name || 'Player B';
+    const playerAFunbridge = match.player_a_funbridge_username ? ` (${match.player_a_funbridge_username})` : '';
+    const playerBFunbridge = match.player_b_funbridge_username ? ` (${match.player_b_funbridge_username})` : '';
+    
     if (outcome === 'player_a_wins') {
-      return `${match.player_a_name || 'Player A'} wins`;
+      return `${playerAName}${playerAFunbridge} wins`;
     } else if (outcome === 'player_b_wins') {
-      return `${match.player_b_name || 'Player B'} wins`;
+      return `${playerBName}${playerBFunbridge} wins`;
     } else {
       return 'Tie';
     }
@@ -65,6 +70,9 @@ export default function MatchResultDisplay({
         >
           <span className="font-medium text-gray-900">
             {match.player_a_name || 'Player A'}
+            {match.player_a_funbridge_username && (
+              <span className="text-gray-500 font-normal"> ({match.player_a_funbridge_username})</span>
+            )}
           </span>
           <span className="text-gray-700">
             {match.result.player_a_imp_score} + {playerAHandicap} ={' '}
@@ -79,6 +87,9 @@ export default function MatchResultDisplay({
         >
           <span className="font-medium text-gray-900">
             {match.player_b_name || 'Player B'}
+            {match.player_b_funbridge_username && (
+              <span className="text-gray-500 font-normal"> ({match.player_b_funbridge_username})</span>
+            )}
           </span>
           <span className="text-gray-700">
             {match.result.player_b_imp_score} + {playerBHandicap} ={' '}
