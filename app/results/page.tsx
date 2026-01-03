@@ -25,6 +25,8 @@ export default function ResultsPage() {
   const [loading, setLoading] = useState(true);
   const [rankingsLoading, setRankingsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showMyMatchesOnly, setShowMyMatchesOnly] = useState(true); // Default to true
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null); // Filter by player
   
   // Track if initial data has been loaded to prevent unnecessary re-fetches
   const initialLoadComplete = useRef(false);
@@ -48,8 +50,15 @@ export default function ResultsPage() {
       }
 
       // Prevent re-fetching if user object reference changes but user hasn't actually changed
-      if (initialLoadComplete.current && lastFetchedLeagueId.current) {
+      // But allow initial load even if refs are set (in case of page refresh)
+      if (initialLoadComplete.current && lastFetchedLeagueId.current && lastFetchedDivisionId.current) {
         return;
+      }
+      
+      // Reset refs on initial load to ensure fresh fetch
+      if (!initialLoadComplete.current) {
+        lastFetchedDivisionId.current = null;
+        lastFetchedLeagueId.current = null;
       }
 
       setLoading(true);
@@ -95,11 +104,11 @@ export default function ResultsPage() {
           setUserDivisionId(divisionData.data.division_id);
           // Pre-select user's division if they have one, otherwise select first division
           setSelectedDivisionId(divisionData.data.division_id);
-          lastFetchedDivisionId.current = divisionData.data.division_id;
+          // Don't set lastFetchedDivisionId here - it will be set after data is actually fetched
         } else if (divisionsResult.data && divisionsResult.data.length > 0) {
           // If user is not in a division, select the first division by default
           setSelectedDivisionId(divisionsResult.data[0].id);
-          lastFetchedDivisionId.current = divisionsResult.data[0].id;
+          // Don't set lastFetchedDivisionId here - it will be set after data is actually fetched
         }
       } catch (err) {
         // Non-critical error, continue without division pre-selection
@@ -107,7 +116,7 @@ export default function ResultsPage() {
         // If we have divisions, select the first one by default
         if (divisionsResult.data && divisionsResult.data.length > 0) {
           setSelectedDivisionId(divisionsResult.data[0].id);
-          lastFetchedDivisionId.current = divisionsResult.data[0].id;
+          // Don't set lastFetchedDivisionId here - it will be set after data is actually fetched
         }
       }
 
@@ -171,6 +180,15 @@ export default function ResultsPage() {
 
   const handleDivisionChange = (divisionId: string) => {
     setSelectedDivisionId(divisionId);
+    // Reset "My matches only" filter when switching to a different division
+    if (divisionId !== userDivisionId) {
+      setShowMyMatchesOnly(false);
+    } else {
+      // When switching back to own division, enable the filter by default
+      setShowMyMatchesOnly(true);
+    }
+    // Reset player filter when switching divisions
+    setSelectedPlayerId(null);
   };
 
   return (
@@ -242,71 +260,137 @@ export default function ResultsPage() {
                 </div>
               )}
 
-              {/* Matches Section - Only show if user is in the league (has a division assignment) or is an admin */}
-              {selectedDivisionId && (userDivisionId || user?.role === 'admin') && (
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Matches</h3>
-                  {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="text-gray-600">Loading matches...</div>
+              {/* Matches Section - Show for all authenticated users */}
+              {selectedDivisionId && user && (() => {
+                // Get unique players from rankings for the filter dropdown
+                const divisionPlayers = rankings.map(r => ({
+                  id: r.playerId,
+                  name: r.playerName,
+                })).sort((a, b) => a.name.localeCompare(b.name));
+
+                // Apply filters: first "My matches only", then player filter
+                let filteredMatches = matches;
+                
+                // Filter by "My matches only" if enabled and viewing own division
+                if (showMyMatchesOnly && user && selectedDivisionId === userDivisionId) {
+                  filteredMatches = filteredMatches.filter(match => 
+                    match.player_a_id === user.id || match.player_b_id === user.id
+                  );
+                }
+                
+                // Filter by selected player
+                if (selectedPlayerId) {
+                  filteredMatches = filteredMatches.filter(match => 
+                    match.player_a_id === selectedPlayerId || match.player_b_id === selectedPlayerId
+                  );
+                }
+
+                return (
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                      <h3 className="text-lg font-medium text-gray-900">Matches</h3>
+                      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                        {/* Player filter dropdown */}
+                        {divisionPlayers.length > 0 && (
+                          <div className="flex items-center space-x-2">
+                            <label htmlFor="player-filter" className="text-sm text-gray-700 whitespace-nowrap">
+                              Filter by player:
+                            </label>
+                            <select
+                              id="player-filter"
+                              value={selectedPlayerId || ''}
+                              onChange={(e) => setSelectedPlayerId(e.target.value || null)}
+                              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-black bg-white min-w-[150px]"
+                            >
+                              <option value="">All players</option>
+                              {divisionPlayers.map((player) => (
+                                <option key={player.id} value={player.id}>
+                                  {player.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        {/* My matches only checkbox */}
+                        {user && selectedDivisionId === userDivisionId && (
+                          <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={showMyMatchesOnly}
+                              onChange={(e) => setShowMyMatchesOnly(e.target.checked)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <span className="text-sm text-gray-700">My matches only</span>
+                          </label>
+                        )}
+                      </div>
                     </div>
-                  ) : matches.length === 0 ? (
-                    <p className="text-gray-600">
-                      No matches found for this division.
-                    </p>
-                  ) : user ? (
-                    <MatchList
-                      matches={matches}
-                      currentUserId={user.id}
-                      currentUserRole={user.role}
-                      onResultSubmit={async () => {
-                        // Refresh matches and rankings after result submission
-                        if (activeLeague && selectedDivisionId) {
-                          // Reset tracking refs to force a refresh
-                          lastFetchedDivisionId.current = null;
-                          lastFetchedLeagueId.current = null;
-                          
-                          // Add a small delay to ensure the database update has propagated
-                          await new Promise(resolve => setTimeout(resolve, 300));
-                          
-                          setLoading(true);
-                          setRankingsLoading(true);
-                          
-                          try {
-                            const [matchesResult, rankingsResult] = await Promise.all([
-                              getMatchesByDivision(selectedDivisionId, activeLeague.id),
-                              getRankingsForDivision(selectedDivisionId, activeLeague.id),
-                            ]);
+                    {loading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="text-gray-600">Loading matches...</div>
+                      </div>
+                    ) : filteredMatches.length === 0 ? (
+                      <p className="text-gray-600">
+                        {selectedPlayerId
+                          ? `No matches found for ${divisionPlayers.find(p => p.id === selectedPlayerId)?.name || 'selected player'} in this division.`
+                          : showMyMatchesOnly 
+                            ? 'No matches found for you in this division.'
+                            : 'No matches found for this division.'}
+                      </p>
+                    ) : user ? (
+                      <MatchList
+                        matches={filteredMatches}
+                        currentUserId={user.id}
+                        currentUserRole={user.role}
+                        onResultSubmit={async () => {
+                          // Refresh matches and rankings after result submission
+                          if (activeLeague && selectedDivisionId) {
+                            // Reset tracking refs to force a refresh
+                            lastFetchedDivisionId.current = null;
+                            lastFetchedLeagueId.current = null;
                             
-                            if (!matchesResult.error && matchesResult.data) {
-                              setMatches(matchesResult.data);
-                            } else if (matchesResult.error) {
-                              console.error('Failed to refresh matches:', matchesResult.error);
-                              setError(matchesResult.error);
+                            // Add a small delay to ensure the database update has propagated
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                            
+                            setLoading(true);
+                            setRankingsLoading(true);
+                            
+                            try {
+                              const [matchesResult, rankingsResult] = await Promise.all([
+                                getMatchesByDivision(selectedDivisionId, activeLeague.id),
+                                getRankingsForDivision(selectedDivisionId, activeLeague.id),
+                              ]);
+                              
+                              if (!matchesResult.error && matchesResult.data) {
+                                setMatches(matchesResult.data);
+                              } else if (matchesResult.error) {
+                                console.error('Failed to refresh matches:', matchesResult.error);
+                                setError(matchesResult.error);
+                              }
+                              
+                              if (!rankingsResult.error && rankingsResult.data) {
+                                setRankings(rankingsResult.data);
+                              } else if (rankingsResult.error) {
+                                console.error('Failed to refresh rankings:', rankingsResult.error);
+                              }
+                              
+                              // Update refs after successful fetch
+                              lastFetchedDivisionId.current = selectedDivisionId;
+                              lastFetchedLeagueId.current = activeLeague.id;
+                            } catch (error) {
+                              console.error('Error refreshing data:', error);
+                              setError('Failed to refresh data after score submission');
+                            } finally {
+                              setLoading(false);
+                              setRankingsLoading(false);
                             }
-                            
-                            if (!rankingsResult.error && rankingsResult.data) {
-                              setRankings(rankingsResult.data);
-                            } else if (rankingsResult.error) {
-                              console.error('Failed to refresh rankings:', rankingsResult.error);
-                            }
-                            
-                            // Update refs after successful fetch
-                            lastFetchedDivisionId.current = selectedDivisionId;
-                            lastFetchedLeagueId.current = activeLeague.id;
-                          } catch (error) {
-                            console.error('Error refreshing data:', error);
-                            setError('Failed to refresh data after score submission');
-                          } finally {
-                            setLoading(false);
-                            setRankingsLoading(false);
                           }
-                        }
-                      }}
-                    />
-                  ) : null}
-                </div>
-              )}
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                );
+              })()}
             </>
           )}
           </div>
