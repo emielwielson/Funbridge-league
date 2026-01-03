@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import MatchList from '@/components/matches/MatchList';
 import RankingsTable from '@/components/rankings/RankingsTable';
@@ -25,11 +25,30 @@ export default function ResultsPage() {
   const [loading, setLoading] = useState(true);
   const [rankingsLoading, setRankingsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Track if initial data has been loaded to prevent unnecessary re-fetches
+  const initialLoadComplete = useRef(false);
+  const lastFetchedDivisionId = useRef<string | null>(null);
+  const lastFetchedLeagueId = useRef<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!user) {
         setLoading(false);
+        // Reset tracking when user logs out
+        initialLoadComplete.current = false;
+        lastFetchedDivisionId.current = null;
+        lastFetchedLeagueId.current = null;
+        setActiveLeague(null);
+        setDivisions([]);
+        setSelectedDivisionId(null);
+        setMatches([]);
+        setRankings([]);
+        return;
+      }
+
+      // Prevent re-fetching if user object reference changes but user hasn't actually changed
+      if (initialLoadComplete.current && lastFetchedLeagueId.current) {
         return;
       }
 
@@ -45,14 +64,17 @@ export default function ResultsPage() {
       if (leagueResult.error || !leagueResult.data) {
         setError(leagueResult.error || 'No active league found');
         setLoading(false);
+        initialLoadComplete.current = true;
         return;
       }
 
       setActiveLeague(leagueResult.data);
+      lastFetchedLeagueId.current = leagueResult.data.id;
 
       if (divisionsResult.error) {
         setError(divisionsResult.error);
         setLoading(false);
+        initialLoadComplete.current = true;
         return;
       }
 
@@ -73,9 +95,11 @@ export default function ResultsPage() {
           setUserDivisionId(divisionData.data.division_id);
           // Pre-select user's division if they have one, otherwise select first division
           setSelectedDivisionId(divisionData.data.division_id);
+          lastFetchedDivisionId.current = divisionData.data.division_id;
         } else if (divisionsResult.data && divisionsResult.data.length > 0) {
           // If user is not in a division, select the first division by default
           setSelectedDivisionId(divisionsResult.data[0].id);
+          lastFetchedDivisionId.current = divisionsResult.data[0].id;
         }
       } catch (err) {
         // Non-critical error, continue without division pre-selection
@@ -83,18 +107,28 @@ export default function ResultsPage() {
         // If we have divisions, select the first one by default
         if (divisionsResult.data && divisionsResult.data.length > 0) {
           setSelectedDivisionId(divisionsResult.data[0].id);
+          lastFetchedDivisionId.current = divisionsResult.data[0].id;
         }
       }
 
       setLoading(false);
+      initialLoadComplete.current = true;
     };
 
     fetchData();
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id, not the entire user object
 
   useEffect(() => {
     const fetchData = async () => {
       if (!activeLeague || !selectedDivisionId) {
+        return;
+      }
+
+      // Prevent re-fetching if the same division and league are already loaded
+      if (
+        lastFetchedDivisionId.current === selectedDivisionId &&
+        lastFetchedLeagueId.current === activeLeague.id
+      ) {
         return;
       }
 
@@ -122,6 +156,10 @@ export default function ResultsPage() {
         setRankings(rankingsResult.data || []);
       }
 
+      // Update refs to track what we've fetched
+      lastFetchedDivisionId.current = selectedDivisionId;
+      lastFetchedLeagueId.current = activeLeague.id;
+
       setLoading(false);
       setRankingsLoading(false);
     };
@@ -129,8 +167,6 @@ export default function ResultsPage() {
     if (activeLeague && selectedDivisionId) {
       fetchData();
     }
-    // Only fetch when division changes, not automatically
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLeague?.id, selectedDivisionId]);
 
   const handleDivisionChange = (divisionId: string) => {
@@ -226,6 +262,10 @@ export default function ResultsPage() {
                       onResultSubmit={async () => {
                         // Refresh matches and rankings after result submission
                         if (activeLeague && selectedDivisionId) {
+                          // Reset tracking refs to force a refresh
+                          lastFetchedDivisionId.current = null;
+                          lastFetchedLeagueId.current = null;
+                          
                           // Add a small delay to ensure the database update has propagated
                           await new Promise(resolve => setTimeout(resolve, 300));
                           
@@ -233,22 +273,12 @@ export default function ResultsPage() {
                           setRankingsLoading(true);
                           
                           try {
-                            console.log('Refreshing matches and rankings...');
                             const [matchesResult, rankingsResult] = await Promise.all([
                               getMatchesByDivision(selectedDivisionId, activeLeague.id),
                               getRankingsForDivision(selectedDivisionId, activeLeague.id),
                             ]);
                             
-                            console.log('Matches result:', matchesResult);
-                            console.log('Rankings result:', rankingsResult);
-                            
                             if (!matchesResult.error && matchesResult.data) {
-                              console.log('Updating matches state with', matchesResult.data.length, 'matches');
-                              console.log('Match data structure:', JSON.stringify(matchesResult.data, null, 2));
-                              // Log each match's result status
-                              matchesResult.data.forEach((match: any) => {
-                                console.log(`Match ${match.id}: has result =`, !!match.result, 'result =', match.result);
-                              });
                               setMatches(matchesResult.data);
                             } else if (matchesResult.error) {
                               console.error('Failed to refresh matches:', matchesResult.error);
@@ -256,11 +286,14 @@ export default function ResultsPage() {
                             }
                             
                             if (!rankingsResult.error && rankingsResult.data) {
-                              console.log('Updating rankings state with', rankingsResult.data.length, 'rankings');
                               setRankings(rankingsResult.data);
                             } else if (rankingsResult.error) {
                               console.error('Failed to refresh rankings:', rankingsResult.error);
                             }
+                            
+                            // Update refs after successful fetch
+                            lastFetchedDivisionId.current = selectedDivisionId;
+                            lastFetchedLeagueId.current = activeLeague.id;
                           } catch (error) {
                             console.error('Error refreshing data:', error);
                             setError('Failed to refresh data after score submission');

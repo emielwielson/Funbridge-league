@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import MatchList from '@/components/matches/MatchList';
 import { getMatchesByPlayer } from '@/lib/api/matches';
@@ -15,11 +15,31 @@ export default function MatchesPage() {
   const [activeLeague, setActiveLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Track if initial data has been loaded to prevent unnecessary re-fetches
+  const initialLoadComplete = useRef(false);
+  const lastFetchedUserId = useRef<string | null>(null);
+  const lastFetchedLeagueId = useRef<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!user) {
         setLoading(false);
+        // Reset tracking when user logs out
+        initialLoadComplete.current = false;
+        lastFetchedUserId.current = null;
+        lastFetchedLeagueId.current = null;
+        setActiveLeague(null);
+        setMatches([]);
+        return;
+      }
+
+      // Prevent re-fetching if user object reference changes but user hasn't actually changed
+      if (
+        initialLoadComplete.current &&
+        lastFetchedUserId.current === user.id &&
+        lastFetchedLeagueId.current
+      ) {
         return;
       }
 
@@ -31,25 +51,30 @@ export default function MatchesPage() {
       if (leagueResult.error || !leagueResult.data) {
         setError(leagueResult.error || 'No active league found');
         setLoading(false);
+        initialLoadComplete.current = true;
         return;
       }
 
       setActiveLeague(leagueResult.data);
+      lastFetchedLeagueId.current = leagueResult.data.id;
 
       // Fetch matches for current user
       const matchesResult = await getMatchesByPlayer(user.id, leagueResult.data.id);
       if (matchesResult.error) {
         setError(matchesResult.error);
         setLoading(false);
+        initialLoadComplete.current = true;
         return;
       }
 
       setMatches(matchesResult.data || []);
+      lastFetchedUserId.current = user.id;
       setLoading(false);
+      initialLoadComplete.current = true;
     };
 
     fetchData();
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id, not the entire user object
 
   return (
     <ProtectedRoute>
@@ -97,10 +122,17 @@ export default function MatchesPage() {
                 currentUserRole={user.role}
                 onResultSubmit={async () => {
                   // Refresh matches after result submission
-                  if (activeLeague) {
+                  if (activeLeague && user) {
+                    // Reset tracking refs to force a refresh
+                    lastFetchedUserId.current = null;
+                    lastFetchedLeagueId.current = null;
+                    
                     const matchesResult = await getMatchesByPlayer(user.id, activeLeague.id);
                     if (!matchesResult.error && matchesResult.data) {
                       setMatches(matchesResult.data);
+                      // Update refs after successful fetch
+                      lastFetchedUserId.current = user.id;
+                      lastFetchedLeagueId.current = activeLeague.id;
                     }
                   }
                 }}
