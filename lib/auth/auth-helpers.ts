@@ -151,14 +151,31 @@ export async function getCurrentUser(): Promise<AuthResponse> {
       credentials: 'include',
     });
 
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('Non-JSON response from /api/auth/me:', text.substring(0, 200));
+      return {
+        user: null,
+        error: { message: 'Server error: Invalid response format' },
+      };
+    }
+
     const data = await response.json();
 
-    if (data.error) {
+    // Check if there's an actual error message (not just an empty string or object)
+    if (data.error && typeof data.error === 'string' && data.error.trim()) {
       return { user: null, error: { message: data.error } };
     }
 
+    // If response is not ok but no error message, treat as unauthenticated
+    if (!response.ok && !data.user) {
+      return { user: null, error: null };
+    }
+
     return {
-      user: data.user,
+      user: data.user || null,
       error: null,
     };
   } catch (error: any) {

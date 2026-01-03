@@ -70,10 +70,10 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // If accessing auth routes with session, redirect to home
-  if (isAuthRoute && hasValidSession) {
-    return NextResponse.redirect(new URL('/', req.url));
-  }
+  // Allow access to auth routes even with a session
+  // This prevents redirect loops when token structure looks valid but is actually invalid
+  // The client-side will handle redirecting authenticated users if needed
+  // Users can still access login/register to switch accounts or re-authenticate
 
   return NextResponse.next();
 }

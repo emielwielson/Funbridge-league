@@ -34,7 +34,15 @@ export async function GET(request: NextRequest) {
 
     const result = await getCurrentUserFromToken(token);
 
+    // Authentication failures (invalid token, user not found) are normal states, not errors
+    // Return null user instead of an error
     if (result.error) {
+      // Check if it's an authentication failure (expected) vs actual error
+      const authFailureMessages = ['Invalid token', 'User not found'];
+      if (authFailureMessages.includes(result.error.message)) {
+        return NextResponse.json({ user: null }, { status: 200 });
+      }
+      // For other errors, return as error
       return NextResponse.json(
         { error: result.error.message },
         { status: 401 }

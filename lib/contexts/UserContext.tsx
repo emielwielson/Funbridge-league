@@ -20,13 +20,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       const { user: currentUser, error } = await getCurrentUser();
-      if (error) {
-        console.error('Error getting user:', error);
+      if (error && error.message) {
+        // Only log actual server/network errors, not authentication failures
+        // Authentication failures (no user, invalid token) are normal states
+        const authFailureMessages = ['Invalid token', 'User not found'];
+        if (!authFailureMessages.includes(error.message)) {
+          console.error('Error getting user:', error.message);
+        }
         setUser(null);
       } else {
         setUser(currentUser);
       }
     } catch (error) {
+      // Only log unexpected errors (network failures, etc.)
       console.error('Error refreshing user:', error);
       setUser(null);
     } finally {
