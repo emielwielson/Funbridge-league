@@ -95,3 +95,32 @@ export async function updateHandicap(
   }
 }
 
+/**
+ * Reset a user's password (admin only)
+ * Returns a temporary password that should be shared with the user
+ */
+export async function resetPassword(
+  userId: string
+): Promise<ApiResponse<{ temporaryPassword: string; userName: string }>> {
+  try {
+    const response = await fetch('/api/users/reset-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ userId }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { data: null, error: data.error || 'Failed to reset password' };
+    }
+
+    return { data: data.data, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message || 'Failed to reset password' };
+  }
+}
+

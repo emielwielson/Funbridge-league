@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getAllUsers, promoteToAdmin } from '@/lib/api/users';
+import { getAllUsers, promoteToAdmin, resetPassword } from '@/lib/api/users';
 import type { UserWithDivision } from '@/lib/types/user';
 import UserRoleBadge from './UserRoleBadge';
 import HandicapEditor from './HandicapEditor';
@@ -19,6 +19,10 @@ export default function UserList({ onUserUpdate }: UserListProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
+  const [resettingUserId, setResettingUserId] = useState<string | null>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
+  const [passwordUserName, setPasswordUserName] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -68,6 +72,40 @@ export default function UserList({ onUserUpdate }: UserListProps) {
     setUsers((prev) =>
       prev.map((user) => (user.id === updatedUser.id ? updatedUser : user))
     );
+  };
+
+  const handleResetPassword = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to reset the password for ${userName}? A temporary password will be generated.`)) {
+      return;
+    }
+
+    setResettingUserId(userId);
+    const { data, error: resetError } = await resetPassword(userId);
+
+    if (resetError || !data) {
+      alert(resetError || 'Failed to reset password');
+      setResettingUserId(null);
+      return;
+    }
+
+    // Show modal with temporary password
+    setTemporaryPassword(data.temporaryPassword);
+    setPasswordUserName(data.userName);
+    setShowPasswordModal(true);
+    setResettingUserId(null);
+  };
+
+  const copyPasswordToClipboard = () => {
+    if (temporaryPassword) {
+      navigator.clipboard.writeText(temporaryPassword);
+      alert('Password copied to clipboard!');
+    }
+  };
+
+  const closePasswordModal = () => {
+    setShowPasswordModal(false);
+    setTemporaryPassword(null);
+    setPasswordUserName(null);
   };
 
   if (loading) {
@@ -177,18 +215,29 @@ export default function UserList({ onUserUpdate }: UserListProps) {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {user.division_name || '-'}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                {user.role !== 'admin' && (
+              <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button
-                    variant="secondary"
+                    variant="danger"
                     size="sm"
-                    onClick={() => handlePromote(user.id)}
-                    loading={promotingUserId === user.id}
-                    disabled={promotingUserId === user.id}
+                    onClick={() => handleResetPassword(user.id, user.name)}
+                    loading={resettingUserId === user.id}
+                    disabled={resettingUserId === user.id}
                   >
-                    Promote to Admin
+                    Reset Password
                   </Button>
-                )}
+                  {user.role !== 'admin' && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handlePromote(user.id)}
+                      loading={promotingUserId === user.id}
+                      disabled={promotingUserId === user.id}
+                    >
+                      Promote to Admin
+                    </Button>
+                  )}
+                </div>
               </td>
             </tr>
           ))}
@@ -222,8 +271,17 @@ export default function UserList({ onUserUpdate }: UserListProps) {
                   {user.division_name || 'Not assigned'}
                 </span>
               </div>
-              {user.role !== 'admin' && (
-                <div className="pt-2">
+              <div className="pt-2 space-y-2">
+                <Button
+                  variant="danger"
+                  fullWidth
+                  onClick={() => handleResetPassword(user.id, user.name)}
+                  loading={resettingUserId === user.id}
+                  disabled={resettingUserId === user.id}
+                >
+                  Reset Password
+                </Button>
+                {user.role !== 'admin' && (
                   <Button
                     variant="primary"
                     fullWidth
@@ -233,12 +291,52 @@ export default function UserList({ onUserUpdate }: UserListProps) {
                   >
                     Promote to Admin
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Password Reset Modal */}
+      {showPasswordModal && temporaryPassword && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Password Reset Successful
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              A temporary password has been generated for <strong>{passwordUserName}</strong>.
+              Please share this password with them securely.
+            </p>
+            <div className="bg-gray-50 rounded-md p-4 mb-4">
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                Temporary Password:
+              </label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-sm font-mono bg-white px-3 py-2 rounded border border-gray-300 break-all">
+                  {temporaryPassword}
+                </code>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={copyPasswordToClipboard}
+                >
+                  Copy
+                </Button>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                variant="primary"
+                onClick={closePasswordModal}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
