@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('id, name')
       .eq('id', userId)
-      .single();
+      .single<{ id: string; name: string }>();
 
     if (findError || !existingUser) {
       return NextResponse.json(
