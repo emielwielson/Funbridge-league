@@ -58,6 +58,12 @@ export default function Navbar() {
                   >
                     Results
                   </Link>
+                  <Link
+                    href="/previous-results"
+                    className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px] flex items-center"
+                  >
+                    Previous Results
+                  </Link>
                   {isAdmin && (
                     <div className="relative">
                       <button
@@ -276,6 +282,13 @@ export default function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Results
+                </Link>
+                <Link
+                  href="/previous-results"
+                  className="block w-full px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] flex items-center whitespace-nowrap"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Previous Results
                 </Link>
                 {isAdmin && (
                   <>
