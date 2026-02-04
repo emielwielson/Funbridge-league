@@ -38,7 +38,8 @@ export default function PreviousResultsPage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="min-h-screen bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-6">
             <Skeleton height={32} className="mb-2" />
             <Skeleton height={16} width="60%" />
@@ -51,6 +52,7 @@ export default function PreviousResultsPage() {
               </div>
             ))}
           </div>
+          </div>
         </div>
       </ProtectedRoute>
     );
@@ -59,10 +61,12 @@ export default function PreviousResultsPage() {
   if (error) {
     return (
       <ProtectedRoute>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="min-h-screen bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Alert variant="error" dismissible>
             {error}
           </Alert>
+          </div>
         </div>
       </ProtectedRoute>
     );
@@ -70,13 +74,14 @@ export default function PreviousResultsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Previous Results</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            View final results from completed leagues
-          </p>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">Previous Results</h1>
+            <p className="mt-2 text-sm text-gray-600">
+              View final results from completed leagues
+            </p>
+          </div>
 
         {leagues.length === 0 ? (
           <div className="text-center py-12 text-gray-600">
@@ -99,6 +104,7 @@ export default function PreviousResultsPage() {
             ))}
           </div>
         )}
+        </div>
       </div>
     </ProtectedRoute>
   );
