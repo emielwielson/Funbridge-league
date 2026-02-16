@@ -32,8 +32,12 @@ export interface AuthError {
   code?: string;
 }
 
+import type { LeagueStatus } from '@/lib/types/league';
+
 export interface UserWithDivision extends User {
   division_id?: string;
   division_name?: string;
   league_id?: string;
+  /** Present when league_id is set; used to show "Remove from league" only for draft leagues */
+  league_status?: LeagueStatus;
 }

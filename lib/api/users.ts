@@ -124,3 +124,28 @@ export async function resetPassword(
   }
 }
 
+/**
+ * Delete a user (admin only)
+ * Removes the player from the system. Cannot delete yourself.
+ */
+export async function deleteUser(
+  userId: string
+): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const response = await fetch(`/api/users/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { data: null, error: data.error || 'Failed to delete user' };
+    }
+
+    return { data: data.data, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message || 'Failed to delete user' };
+  }
+}
+

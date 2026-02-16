@@ -41,19 +41,19 @@ export async function GET(request: NextRequest) {
     // Get active or draft league to fetch division assignments
     const { data: activeLeague } = await supabase
       .from('leagues')
-      .select('id')
+      .select('id, status')
       .eq('status', 'active')
-      .maybeSingle<{ id: string }>();
+      .maybeSingle<{ id: string; status: string }>();
 
     const { data: draftLeague } = activeLeague
       ? { data: null }
       : await supabase
           .from('leagues')
-          .select('id')
+          .select('id, status')
           .eq('status', 'draft')
           .order('created_at', { ascending: false })
           .limit(1)
-          .maybeSingle<{ id: string }>();
+          .maybeSingle<{ id: string; status: string }>();
 
     const currentLeague = activeLeague || draftLeague;
 
@@ -97,6 +97,7 @@ export async function GET(request: NextRequest) {
             ? (assignment.divisions as any).name
             : undefined,
           league_id: currentLeague.id,
+          league_status: currentLeague.status as 'draft' | 'active',
         };
       });
 

@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getAllUsers, promoteToAdmin, resetPassword } from '@/lib/api/users';
+import { getAllUsers, promoteToAdmin, resetPassword, deleteUser } from '@/lib/api/users';
 import type { UserWithDivision } from '@/lib/types/user';
+import { useAuth } from '@/lib/hooks/useAuth';
 import UserRoleBadge from './UserRoleBadge';
 import HandicapEditor from './HandicapEditor';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -15,11 +16,13 @@ interface UserListProps {
 }
 
 export default function UserList({ onUserUpdate }: UserListProps) {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserWithDivision[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
   const [resettingUserId, setResettingUserId] = useState<string | null>(null);
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
   const [passwordUserName, setPasswordUserName] = useState<string | null>(null);
@@ -108,6 +111,28 @@ export default function UserList({ onUserUpdate }: UserListProps) {
     setPasswordUserName(null);
   };
 
+  const handleRemovePlayer = async (userId: string, userName: string) => {
+    if (!confirm(`Remove ${userName} from the players list? This will permanently delete their account and they will no longer be able to log in.`)) {
+      return;
+    }
+    setRemovingUserId(userId);
+    const { error } = await deleteUser(userId);
+    if (error) {
+      alert(error);
+      setRemovingUserId(null);
+      return;
+    }
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    setRemovingUserId(null);
+    if (onUserUpdate) onUserUpdate();
+  };
+
+  const inCurrentLeague = (user: UserWithDivision) =>
+    user.league_id != null && user.division_id != null;
+
+  const canRemovePlayer = (user: UserWithDivision) =>
+    currentUser != null && user.id !== currentUser.id;
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -117,7 +142,7 @@ export default function UserList({ onUserUpdate }: UserListProps) {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                  {[1, 2, 3, 4, 5, 6, 7].map((i) => (
                     <th key={i} className="px-6 py-3">
                       <Skeleton height={20} />
                     </th>
@@ -127,7 +152,7 @@ export default function UserList({ onUserUpdate }: UserListProps) {
               <tbody className="divide-y divide-gray-200">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <tr key={i}>
-                    {[1, 2, 3, 4, 5, 6].map((j) => (
+                    {[1, 2, 3, 4, 5, 6, 7].map((j) => (
                       <td key={j} className="px-6 py-4">
                         <Skeleton height={16} />
                       </td>
@@ -193,6 +218,9 @@ export default function UserList({ onUserUpdate }: UserListProps) {
               Division
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              In current league
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Actions
             </th>
           </tr>
@@ -215,8 +243,30 @@ export default function UserList({ onUserUpdate }: UserListProps) {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {user.division_name || '-'}
               </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {user.league_id != null ? (
+                  inCurrentLeague(user) ? (
+                    <span className="text-green-700 font-medium">Yes</span>
+                  ) : (
+                    <span className="text-gray-500">No</span>
+                  )
+                ) : (
+                  <span className="text-gray-400">—</span>
+                )}
+              </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                 <div className="flex flex-col sm:flex-row gap-2">
+                  {canRemovePlayer(user) && (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleRemovePlayer(user.id, user.name)}
+                      loading={removingUserId === user.id}
+                      disabled={removingUserId === user.id}
+                    >
+                      Remove player
+                    </Button>
+                  )}
                   <Button
                     variant="danger"
                     size="sm"
@@ -271,7 +321,28 @@ export default function UserList({ onUserUpdate }: UserListProps) {
                   {user.division_name || 'Not assigned'}
                 </span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">In current league:</span>
+                <span className="text-sm text-gray-900">
+                  {user.league_id != null
+                    ? inCurrentLeague(user)
+                      ? 'Yes'
+                      : 'No'
+                    : '—'}
+                </span>
+              </div>
               <div className="pt-2 space-y-2">
+                {canRemovePlayer(user) && (
+                  <Button
+                    variant="danger"
+                    fullWidth
+                    onClick={() => handleRemovePlayer(user.id, user.name)}
+                    loading={removingUserId === user.id}
+                    disabled={removingUserId === user.id}
+                  >
+                    Remove player
+                  </Button>
+                )}
                 <Button
                   variant="danger"
                   fullWidth
