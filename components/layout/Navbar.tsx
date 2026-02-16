@@ -158,6 +158,12 @@ export default function Navbar() {
                       {user.role}
                     </div>
                   </div>
+                  <Link
+                    href="/change-password"
+                    className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px] flex items-center"
+                  >
+                    Change password
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 min-h-[44px]"
@@ -332,6 +338,13 @@ export default function Navbar() {
                     </Link>
                   </>
                 )}
+                <Link
+                  href="/change-password"
+                  className="block w-full px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Change password
+                </Link>
                 <div className="pt-4 border-t border-gray-200 mt-4">
                   <button
                     onClick={async () => {

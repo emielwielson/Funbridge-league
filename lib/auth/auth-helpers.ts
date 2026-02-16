@@ -129,6 +129,34 @@ export async function logout(): Promise<{ error: AuthError | null }> {
 }
 
 /**
+ * Change password for the current user.
+ * Requires current password and new password.
+ */
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<{ error: AuthError | null }> {
+  try {
+    const response = await fetch('/api/auth/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        currentPassword: currentPassword.trim(),
+        newPassword: newPassword.trim(),
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      return { error: { message: (data.error as string) || 'Failed to change password' } };
+    }
+    return { error: null };
+  } catch (error: any) {
+    return { error: { message: error.message || 'Failed to change password' } };
+  }
+}
+
+/**
  * Get current session (returns user if authenticated)
  */
 export async function getSession() {
