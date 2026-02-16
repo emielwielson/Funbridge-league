@@ -94,19 +94,55 @@ export async function POST(request: NextRequest) {
     
     // Hash the password
     const passwordHash = await hashPassword(temporaryPassword);
+    if (!passwordHash || !passwordHash.startsWith('$2')) {
+      console.error('[reset-password] bcrypt hash invalid, length:', passwordHash?.length);
+      return NextResponse.json(
+        { data: null, error: 'Failed to generate password hash' },
+        { status: 500 }
+      );
+    }
 
     // Update user's password hash
-    const { error: updateError } = await (supabase
-      .from('users') as any)
-      .update({ 
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
         password_hash: passwordHash,
-        updated_at: new Date().toISOString() 
-      } as any)
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', userId);
 
     if (updateError) {
       return NextResponse.json(
         { data: null, error: updateError.message || 'Failed to reset password' },
+        { status: 500 }
+      );
+    }
+
+    // Verify the hash was stored correctly (re-fetch and compare)
+    const { data: updatedRow, error: fetchAfterError } = await supabase
+      .from('users')
+      .select('password_hash')
+      .eq('id', userId)
+      .single<{ password_hash: string }>();
+
+    if (fetchAfterError || !updatedRow?.password_hash) {
+      console.error('Reset password: could not verify stored hash', fetchAfterError);
+      return NextResponse.json(
+        { data: null, error: 'Password was reset but verification failed. Please try again.' },
+        { status: 500 }
+      );
+    }
+
+    const verifyStored = await bcrypt.compare(temporaryPassword, updatedRow.password_hash);
+    if (!verifyStored) {
+      console.error(
+        '[reset-password] Stored hash does not match. Written length:', passwordHash.length,
+        'read-back length:', updatedRow.password_hash.length,
+        'written prefix:', passwordHash.slice(0, 7),
+        'read-back prefix:', updatedRow.password_hash.slice(0, 7)
+      );
+      return NextResponse.json(
+        { data: null, error: 'Password update could not be verified. Please try resetting again.' },
         { status: 500 }
       );
     }

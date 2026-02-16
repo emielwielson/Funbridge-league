@@ -378,7 +378,7 @@ export default function UserList({ onUserUpdate }: UserListProps) {
             </h3>
             <p className="text-sm text-gray-600 mb-4">
               A temporary password has been generated for <strong>{passwordUserName}</strong>.
-              Please share this password with them securely.
+              Please share this password with them securely. When copying, avoid extra spaces or line breaks—the user must enter it exactly as shown.
             </p>
             <div className="bg-gray-50 rounded-md p-4 mb-4">
               <label className="block text-xs font-medium text-gray-700 mb-2">

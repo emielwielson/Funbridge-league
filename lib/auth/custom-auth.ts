@@ -164,24 +164,54 @@ export async function loginCustom({
   try {
     const supabase = getSupabaseClient();
 
-    // Find user by name
-    const { data: user, error: findError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('name', name)
-      .single<{ id: string; name: string; role: 'player' | 'admin'; password_hash: string; funbridge_username: string | null; handicap: number | null }>();
+    // Trim to avoid copy-paste or input issues (e.g. trailing newline on pasted password)
+    const trimmedName = typeof name === 'string' ? name.trim() : '';
+    const trimmedPassword = typeof password === 'string' ? password.trim() : '';
 
-    if (findError || !user) {
+    if (!trimmedName || !trimmedPassword) {
       return {
         user: null,
         error: { message: 'Invalid name or password' },
       };
     }
 
-    // Verify password
-    const isValidPassword = await verifyPassword(password, user.password_hash);
+    // Find user by name (use maybeSingle to avoid throwing when 0 or 2+ rows)
+    const { data: user, error: findError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('name', trimmedName)
+      .maybeSingle<{ id: string; name: string; role: 'player' | 'admin'; password_hash: string; funbridge_username: string | null; handicap: number | null }>();
+
+    if (findError) {
+      console.error('[login] Lookup failed for name:', JSON.stringify(trimmedName), 'error:', findError.message);
+      return {
+        user: null,
+        error: { message: 'Invalid name or password' },
+      };
+    }
+    if (!user) {
+      return {
+        user: null,
+        error: { message: 'Invalid name or password' },
+      };
+    }
+
+    // Verify password (must be non-empty and match stored hash)
+    const storedHash = user.password_hash;
+    if (!storedHash || typeof storedHash !== 'string') {
+      console.error('[login] User found but password_hash missing or invalid for user id:', user.id);
+      return {
+        user: null,
+        error: { message: 'Invalid name or password' },
+      };
+    }
+    if (!storedHash.startsWith('$2')) {
+      console.error('[login] User password_hash does not look like bcrypt (expected $2a$ or $2b$), length:', storedHash?.length);
+    }
+    const isValidPassword = await verifyPassword(trimmedPassword, storedHash);
 
     if (!isValidPassword) {
+      console.error('[login] Password mismatch for user id:', user.id, 'hash length:', storedHash.length, 'hash prefix:', storedHash.slice(0, 7));
       return {
         user: null,
         error: { message: 'Invalid name or password' },
