@@ -94,11 +94,22 @@ export async function registerCustom({
   try {
     const supabase = getSupabaseClient();
 
+    // Always trim names so login and lookups work reliably
+    const trimmedName = typeof name === 'string' ? name.trim() : '';
+    const trimmedFunbridge = typeof funbridge_username === 'string' ? funbridge_username.trim() : '';
+
+    if (!trimmedName) {
+      return {
+        user: null,
+        error: { message: 'Name is required' },
+      };
+    }
+
     // Check if user with this name already exists
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
       .select('id')
-      .eq('name', name)
+      .eq('name', trimmedName)
       .maybeSingle();
 
     // If we got a user (not an error from single() when no user found), name is taken
@@ -112,13 +123,13 @@ export async function registerCustom({
     // Hash password
     const passwordHash = await hashPassword(password);
 
-    // Insert new user
+    // Insert new user (store trimmed name and funbridge_username)
     const { data: newUser, error: insertError } = await (supabase
       .from('users') as any)
       .insert({
-        name: name,
+        name: trimmedName,
         password_hash: passwordHash,
-        funbridge_username: funbridge_username,
+        funbridge_username: trimmedFunbridge || null,
         role: 'player',
         handicap: 0,
       } as any)

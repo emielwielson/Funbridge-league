@@ -49,6 +49,13 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Trim name and funbridge_username so we never store leading/trailing spaces
+    body = {
+      ...body,
+      name: typeof body.name === 'string' ? body.name.trim() : body.name,
+      funbridge_username: typeof body.funbridge_username === 'string' ? body.funbridge_username.trim() : body.funbridge_username,
+    };
     
     console.log('Calling registerCustom with:', { name: body.name, hasPassword: !!body.password, hasFunbridgeUsername: !!body.funbridge_username });
     
