@@ -103,12 +103,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Update user's password hash
-    const { error: updateError } = await supabase
-      .from('users')
+    const { error: updateError } = await (supabase
+      .from('users') as any)
       .update({
         password_hash: passwordHash,
         updated_at: new Date().toISOString(),
-      })
+      } as any)
       .eq('id', userId);
 
     if (updateError) {
