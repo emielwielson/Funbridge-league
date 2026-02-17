@@ -65,6 +65,11 @@ const migrationFiles = [
   '001_initial_schema.sql',
   '002_rls_policies.sql',
   // Skip 003_initial_admin.sql as it's documentation only
+  '004_auth_sync.sql',
+  '005_add_email_to_users.sql',
+  '006_add_funbridge_username.sql',
+  '007_rename_username_to_name.sql',
+  '008_add_password_hash_function.sql',
 ];
 
 async function runMigrations() {
